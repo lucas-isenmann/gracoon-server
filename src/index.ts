@@ -13,18 +13,19 @@ import { RESIZE_TYPE } from './modifications/modification';
 import { getRandomColor, User, users } from './user';
 import { eq_indices, makeid } from './utils';
 
-
-import express from 'express';
-import * as http from 'http';
 import { Server, Socket } from 'socket.io';
 
-const port = ENV.port;
+// Initialize the server
 
-const app = express();
-const server = http.createServer(app).listen(port);
-const io = new Server(server);
+const io = new Server({
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
-console.log('Server started at http://localhost:' + port);
+io.listen(ENV.port);
+console.log('Server started at http://localhost:' + ENV.port);
 
 
 // gestion des rooms
