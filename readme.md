@@ -3,7 +3,7 @@
 ## Install, build and launch server
 
     npm i
-    cp src/.env.example src/.env 
+    cp src/.env.json.example src/.env.json 
     tsc
     node dist/index.js
 
