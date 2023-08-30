@@ -14,6 +14,8 @@ import { getRandomColor, User, users } from './user';
 import { eq_indices, makeid } from './utils';
 
 import { Server, Socket } from 'socket.io';
+import { handleSubdivideLink } from "./handler";
+import { SubdivideLinkModification } from "./modifications/implementations/subdivide_link";
 
 // Initialize the server
 
@@ -46,7 +48,9 @@ the_graph.add_link(new Link(0, 1, new Coord(200, 200), ORIENTATION.UNDIRECTED, "
 room_graphs.set(the_room, the_graph);
 
 
-
+export function emit_graph_to_room(board: HistBoard, roomId: string, s: Set<SENSIBILITY>) {
+    io.sockets.in(roomId).emit('graph', [...board.graph.vertices.entries()], [...board.graph.links.entries()], [...s]);
+}
 
 
 io.sockets.on('connection', function (client: Socket) {
@@ -68,7 +72,7 @@ io.sockets.on('connection', function (client: Socket) {
     let board = new HistBoard();
     g.set_vertex(0, new Vertex(200, 100, ""));
     room_graphs.set(room_id, g);
-    emit_graph_to_room(new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC]));
+    emit_graph_to_room(board, room_id, new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC]));
     emit_strokes_to_room();
     emit_areas_to_room();
     emit_users_to_client();
@@ -99,9 +103,7 @@ io.sockets.on('connection', function (client: Socket) {
         io.sockets.in(room_id).emit(name, data, [...s]);
     }
 
-    function emit_graph_to_room(s: Set<SENSIBILITY>) {
-        io.sockets.in(room_id).emit('graph', [...g.vertices.entries()], [...g.links.entries()], [...s]);
-    }
+    
 
     function emit_strokes_to_room() {
         io.sockets.in(room_id).emit('strokes', [...board.strokes.entries()]);
@@ -230,11 +232,12 @@ io.sockets.on('connection', function (client: Socket) {
     // GRAPH API
     // ------------------------
 
-    // Elementary Actions
+    // Graph Actions
     client.on("paste_graph", handle_paste_graph);
     client.on("vertices_merge", handle_vertices_merge);
-    client.on("apply_modifyer", handle_apply_modifyer);
-    // Meta
+    client.on("apply_modifyer", handleApplyModifyer);
+    client.on("subdivide_link", (linkIndex: number, pos: Coord, callback: (response: number) => void) => {handleSubdivideLink(board, room_id, linkIndex, pos, callback)});
+    // Board Generic
     client.on("resize_element", handle_resize_element);
     client.on("update_element", handle_update_element);
     client.on("add_element", handle_add_element);
@@ -252,7 +255,7 @@ io.sockets.on('connection', function (client: Socket) {
     //
     // ------------------------
 
-    function handle_apply_modifyer(name: string, attributes_data: Array<any>) {
+    function handleApplyModifyer(name: string, attributesData: Array<any>) {
         const old_vertices = new Map();
         const old_links = new Map();
         for (const [index, vertex] of board.graph.vertices.entries()) {
@@ -266,12 +269,12 @@ io.sockets.on('connection', function (client: Socket) {
         }
 
         if (name == "into_tournament") {
-            if (attributes_data.length != 1) {
+            if (attributesData.length != 1) {
                 console.log("wrong number of attributes");
                 return;
             }
 
-            const area_index = attributes_data[0];
+            const area_index = attributesData[0];
             if (typeof area_index == "string") {
                 const all_vertices_indices = new Array();
                 for (const index of board.graph.vertices.keys()) {
@@ -285,8 +288,33 @@ io.sockets.on('connection', function (client: Socket) {
                     board.graph.complete_subgraph_into_tournament(vertices_indices, (x, y) => { return new Link(x, y, "", ORIENTATION.DIRECTED, "black", "") });
                 }
             }
-
             // emit_graph_to_room(new Set([SENSIBILITY.ELEMENT])); // TODO change to Modification
+        } else if (name == "removeRandomLinks"){
+            if (attributesData.length != 2) {
+                console.log("wrong number of attributes");
+                return;
+            }
+            const area_index = attributesData[0];
+            const p = attributesData[1];
+            if (typeof p == "number"){
+                if (typeof area_index == "string") {
+                    for (const index of board.graph.links.keys()) {
+                        if (Math.random() < p){
+                            board.graph.links.delete(index);
+                        }
+                    }
+                } else {
+                    const area = board.areas.get(area_index);
+                    if (area  !== undefined){
+                        const areaVIndices = board.graph.vertices_contained_by_area(area);
+                        for (const [index, link] of board.graph.links.entries()) {
+                            if (areaVIndices.has(link.start_vertex) && Math.random() < p){
+                                board.graph.links.delete(index);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         const new_vertices = new Map();
@@ -303,7 +331,7 @@ io.sockets.on('connection', function (client: Socket) {
 
         const modif = new ApplyModifyer(old_vertices, old_links, new_vertices, new_links);
         board.append_modification_already_implemented(modif);
-        emit_graph_to_room(new Set([SENSIBILITY.ELEMENT]));
+        emit_graph_to_room(board, room_id, new Set([SENSIBILITY.ELEMENT]));
     }
 
     function handle_add_element(kind: string, data: any, callback: (created_index: number) => void) {
@@ -480,17 +508,21 @@ io.sockets.on('connection', function (client: Socket) {
                     break;
                 }
                 case MergeVertices: {
-                    emit_graph_to_room(new Set());
+                    emit_graph_to_room(board, room_id, new Set());
                     break;
                 }
                 case ApplyModifyer: {
-                    emit_graph_to_room(new Set());
+                    emit_graph_to_room(board, room_id, new Set());
                     break;
                 }
                 case ResizeElement: {
                     const modif = r as ResizeElement;
                     broadcast("update_element", { index: modif.index, kind: modif.kind, param: "c1", value: modif.previous_c1 }, new Set());
                     broadcast("update_element", { index: modif.index, kind: modif.kind, param: "c2", value: modif.previous_c2 }, new Set());
+                    break;
+                }
+                case SubdivideLinkModification: {
+                    emit_graph_to_room(board, room_id, new Set());
                     break;
                 }
             }
@@ -560,17 +592,21 @@ io.sockets.on('connection', function (client: Socket) {
                     break;
                 }
                 case MergeVertices: {
-                    emit_graph_to_room(new Set());
+                    emit_graph_to_room(board, room_id, new Set());
                     break;
                 }
                 case ApplyModifyer: {
-                    emit_graph_to_room(new Set());
+                    emit_graph_to_room(board, room_id, new Set());
                     break;
                 }
                 case ResizeElement: {
                     const modif = r as ResizeElement;
                     broadcast("update_element", { index: modif.index, kind: modif.kind, param: "c1", value: modif.new_c1 }, new Set());
                     broadcast("update_element", { index: modif.index, kind: modif.kind, param: "c2", value: modif.new_c2 }, new Set());
+                    break;
+                }
+                case SubdivideLinkModification: {
+                    emit_graph_to_room(board, room_id, new Set());
                     break;
                 }
             }
@@ -637,7 +673,7 @@ io.sockets.on('connection', function (client: Socket) {
             // TODO
             //g.add_link_with_cp(link[1].start_vertex, link[1].end_vertex, link[1].orientation, new Coord(link[1].cp.x, link[1].cp.y))
         }
-        emit_graph_to_room(new Set([SENSIBILITY.COLOR, SENSIBILITY.ELEMENT, SENSIBILITY.GEOMETRIC]));
+        emit_graph_to_room(board, room_id, new Set([SENSIBILITY.COLOR, SENSIBILITY.ELEMENT, SENSIBILITY.GEOMETRIC]));
     }
 
     function handle_get_json(callback: (arg0: string) => void) {
@@ -664,31 +700,33 @@ io.sockets.on('connection', function (client: Socket) {
             if (typeof r === "string") {
                 console.log(r);
             } else {
-                emit_graph_to_room(r);
+                emit_graph_to_room(board, room_id, r);
             }
         }
     }
 
 
     // OTHERS 
-    function handle_paste_graph(vertices_entries: any[], links_entries: any[]) {
+    function handle_paste_graph(verticesEntries: any[], linksEntries: any[]) {
         console.log("Receive Request: paste graph");
 
         const added_vertices = new Map<number, Vertex>();
         const added_links = new Map<number, Link>();
         const vertex_indices_transformation = new Map<number, number>();
-        const new_vertex_indices: Array<number> = g.get_next_n_available_vertex_indices(vertices_entries.length);
+        const new_vertex_indices: Array<number> = g.get_next_n_available_vertex_indices(verticesEntries.length);
         let i = 0;
-        for (const data of vertices_entries) {
-            const vertex = new Vertex(data[1].pos.x, data[1].pos.y, "");
+        for (const data of verticesEntries) {
+            console.log(data[1].index);
+            console.log(data[1].data);
+            const vertex = new Vertex(data[1].data.pos.x, data[1].data.pos.y, "");
             added_vertices.set(new_vertex_indices[i], vertex);
-            vertex_indices_transformation.set(data[0], new_vertex_indices[i]);
+            vertex_indices_transformation.set(data[1].index, new_vertex_indices[i]);
             i++;
         }
 
-        const new_link_indices = g.get_next_n_available_link_indices(links_entries.length);
+        const new_link_indices = g.get_next_n_available_link_indices(linksEntries.length);
         let j = 0;
-        for (const data of links_entries) {
+        for (const data of linksEntries) {
             let orient = ORIENTATION.UNDIRECTED;
             switch (data[1].orientation) {
                 case "UNDIRECTED":
@@ -698,12 +736,15 @@ io.sockets.on('connection', function (client: Socket) {
                     orient = ORIENTATION.DIRECTED
                     break;
             }
-            const start_index = vertex_indices_transformation.get(data[1].start_vertex);
-            const end_index = vertex_indices_transformation.get(data[1].end_vertex);
-            if (typeof start_index == "number" && typeof end_index == "number") {
-                const cp = typeof data[1].cp == "string" ? "" : new Coord(data[1].cp.x, data[1].cp.y);
-                const link = new Link(start_index, end_index, cp, orient, data[1].color, data[1].weight);
-    
+            const startIndex = vertex_indices_transformation.get(data[1].startVertex.index);
+            console.log("link: startIndex ", startIndex);
+            const endIndex = vertex_indices_transformation.get(data[1].endVertex.index);
+            if (typeof startIndex == "number" && typeof endIndex == "number") {
+                let cp: string | Coord = "";
+                if ( data[1].data.cp ){
+                    cp =  new Coord(data[1].data.cp.x, data[1].data.cp.y);
+                }
+                const link = new Link(startIndex, endIndex, cp, orient, data[1].data.color, data[1].data.weight);
                 added_links.set(new_link_indices[j], link);
                 j++;
             }

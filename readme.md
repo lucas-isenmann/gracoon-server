@@ -4,7 +4,7 @@
 
     npm i
     cp src/.env.json.example src/.env.json 
-    tsc
-    node dist/index.js
+    npm run build
+    npm start
 
 Fix the port you want to use in your `.env` file.
