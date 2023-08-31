@@ -16,6 +16,7 @@ import { eq_indices, makeid } from './utils';
 import { Server, Socket } from 'socket.io';
 import { handleSubdivideLink } from "./handler";
 import { SubdivideLinkModification } from "./modifications/implementations/subdivide_link";
+import PACKAGE from '../package.json';
 
 // Initialize the server
 
@@ -60,6 +61,7 @@ io.sockets.on('connection', function (client: Socket) {
     const user_data = new User(client.id, getRandomColor());
     users.set(client.id, user_data);
     client.emit('myId', user_data.id, user_data.label, user_data.color, Date.now());
+    client.emit("server-version", PACKAGE.version);
 
     // ROOM CREATION
 
