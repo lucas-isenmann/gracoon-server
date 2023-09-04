@@ -1,4 +1,4 @@
-import { Graph, SENSIBILITY, Vertex, Coord, Link, ORIENTATION, Stroke, Area, Vect, TextZone, Representation, Rectangle } from "gramoloss";
+import { SENSIBILITY, Vertex, Coord, Link, ORIENTATION, Stroke, Area, Vect, TextZone, Representation, Rectangle } from "gramoloss";
 import ENV from './.env.json';
 import { HistBoard } from './hist_board';
 import { AddElement } from './modifications/implementations/add_element';
@@ -34,19 +34,8 @@ console.log('Server started at http://localhost:' + ENV.port);
 // gestion des rooms
 
 const room_boards = new Map<string, HistBoard>();
-const room_graphs = new Map<string, Graph<Vertex, Link>>();
 const clientRooms = new Map<string, string>();
 
-
-
-const the_room = "theroom";
-const the_graph = new Graph();
-the_graph.set_vertex(0, new Vertex(100, 300, ""));
-the_graph.set_vertex(1, new Vertex(200, 300, ""));
-the_graph.set_vertex(2, new Vertex(200, 400, ""));
-the_graph.set_vertex(3, new Vertex(100, 400, ""));
-the_graph.add_link(new Link(0, 1, new Coord(200, 200), ORIENTATION.UNDIRECTED, "black", ""));
-room_graphs.set(the_room, the_graph);
 
 
 export function emit_graph_to_room(board: HistBoard, roomId: string, s: Set<SENSIBILITY>) {
@@ -70,31 +59,19 @@ io.sockets.on('connection', function (client: Socket) {
     clientRooms.set(client.id, room_id);
     client.emit('room_id', room_id); // useless ? TODO remove
     console.log("new room : ", room_id);
-    let g = new Graph(); // TODO remove and use the graph of board
     let board = new HistBoard();
-    g.set_vertex(0, new Vertex(200, 100, ""));
-    room_graphs.set(room_id, g);
+    board.graph.set_vertex(0, new Vertex(200, 100, ""));
     emit_graph_to_room(board, room_id, new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC]));
     emit_strokes_to_room();
     emit_areas_to_room();
     emit_users_to_client();
 
-
-    board.graph = g;
     room_boards.set(room_id, board);
 
 
 
-    if (ENV.mode == "dev") {
-        room_id = the_room;
-        client.join(room_id);
-        g = the_graph;
-        clientRooms.set(client.id, room_id);
-        emit_graph_to_client(new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC]));
-    }
-
     function emit_graph_to_client(s: Set<SENSIBILITY>) {
-        client.emit('graph', [...g.vertices.entries()], [...g.links.entries()], [...s]);
+        client.emit('graph', [...board.graph.vertices.entries()], [...board.graph.links.entries()], [...s]);
     }
 
     function emit_reset_board() {
@@ -155,24 +132,20 @@ io.sockets.on('connection', function (client: Socket) {
     }
 
     function handle_change_room_to(new_room_id: string) {
-        if (room_graphs.has(new_room_id)) {
+        if (room_boards.has(new_room_id)) {
             client.join(new_room_id);
             clientRooms.set(client.id, new_room_id);
             room_id = new_room_id;
 
-            const getGraph = room_graphs.get(room_id);
             const getBoard = room_boards.get(room_id);
-            if (getGraph  !== undefined && getBoard  !== undefined){
-                g = getGraph;
+            if (typeof getBoard  !== "undefined"){
                 board = getBoard;
             }
-            board.graph = g;
             emit_graph_to_client(new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC]));
             emit_strokes_to_room();
             emit_areas_to_room();
             emit_users_to_client();
             emit_reset_board();
-            console.log(clientRooms);
         }
         else {
             console.log("asked room does not exist");
@@ -664,12 +637,12 @@ io.sockets.on('connection', function (client: Socket) {
 
     // JSON
     function handle_load_json(s: string) {
-        g.clear();
+        board.graph.clear();
 
         const data = JSON.parse(s);
         for (const vdata of data.vertices) {
             const new_vertex = new Vertex(vdata[1]["pos"]["x"], vdata[1]["pos"]["y"], "");
-            g.vertices.set(vdata[0], new_vertex)
+            board.graph.vertices.set(vdata[0], new_vertex)
         }
         for (const link of data.links) {
             // TODO
@@ -680,8 +653,8 @@ io.sockets.on('connection', function (client: Socket) {
 
     function handle_get_json(callback: (arg0: string) => void) {
         const graph_stringifiable = {
-            vertices: Array.from(g.vertices.entries()),
-            links: Array.from(g.links.entries()),
+            vertices: Array.from(board.graph.vertices.entries()),
+            links: Array.from(board.graph.links.entries()),
         }
         callback(JSON.stringify(graph_stringifiable));
     }
@@ -693,11 +666,11 @@ io.sockets.on('connection', function (client: Socket) {
 
     function handle_vertices_merge(vertex_index_fixed: number, vertex_index_to_remove: number) {
         console.log("Receive Request: vertices_merge");
-        const vertexFixed = g.vertices.get(vertex_index_fixed);
-        const vertexToRemove = g.vertices.get(vertex_index_to_remove);
+        const vertexFixed = board.graph.vertices.get(vertex_index_fixed);
+        const vertexToRemove = board.graph.vertices.get(vertex_index_to_remove);
         if (vertexFixed !== undefined && vertexToRemove !== undefined) {
             board.cancel_last_modification(); // TODO its not necessarily the last which is a translate
-            const modif = MergeVertices.from_graph(g, vertexFixed, vertex_index_fixed, vertexToRemove, vertex_index_to_remove);
+            const modif = MergeVertices.from_graph(board.graph, vertexFixed, vertex_index_fixed, vertexToRemove, vertex_index_to_remove);
             const r = board.try_push_new_modification(modif);
             if (typeof r === "string") {
                 console.log(r);
@@ -715,7 +688,7 @@ io.sockets.on('connection', function (client: Socket) {
         const added_vertices = new Map<number, Vertex>();
         const added_links = new Map<number, Link>();
         const vertex_indices_transformation = new Map<number, number>();
-        const new_vertex_indices: Array<number> = g.get_next_n_available_vertex_indices(verticesEntries.length);
+        const new_vertex_indices: Array<number> = board.graph.get_next_n_available_vertex_indices(verticesEntries.length);
         let i = 0;
         for (const data of verticesEntries) {
             console.log(data[1].index);
@@ -726,7 +699,7 @@ io.sockets.on('connection', function (client: Socket) {
             i++;
         }
 
-        const new_link_indices = g.get_next_n_available_link_indices(linksEntries.length);
+        const new_link_indices = board.graph.get_next_n_available_link_indices(linksEntries.length);
         let j = 0;
         for (const data of linksEntries) {
             let orient = ORIENTATION.UNDIRECTED;
