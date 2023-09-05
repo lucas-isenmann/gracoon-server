@@ -1,4 +1,4 @@
-import { Vertex, Link, SENSIBILITY, Coord, Graph, ORIENTATION } from "gramoloss";
+import { Vertex, Link, SENSIBILITY, Coord, Graph } from "gramoloss";
 import { BoardModification, ServerBoard } from "../modification";
 
 
@@ -41,11 +41,11 @@ export class SubdivideLinkModification implements BoardModification {
         return new Set();
     }
 
-    static from_graph(graph: Graph<Vertex,Link>, oldLinkIndex: number, oldLink: Link, pos: Coord  ): SubdivideLinkModification{
+    static fromGraph(graph: Graph<Vertex,Link>, oldLinkIndex: number, oldLink: Link, pos: Coord  ): SubdivideLinkModification{
         const newVertex = new Vertex(pos.x, pos.y, "");
         const newVertexIndex = graph.get_next_available_index_vertex();
-        const newLink1 = new Link(oldLink.start_vertex, newVertexIndex, "", ORIENTATION.UNDIRECTED, oldLink.color, "");
-        const newLink2 = new Link(newVertexIndex, oldLink.end_vertex, "", ORIENTATION.UNDIRECTED, oldLink.color, "");
+        const newLink1 = new Link(oldLink.start_vertex, newVertexIndex, "", oldLink.orientation, oldLink.color, "");
+        const newLink2 = new Link(newVertexIndex, oldLink.end_vertex, "", oldLink.orientation, oldLink.color, "");
         const [newLink1Index, newLink2Index] = graph.get_next_n_available_link_indices(2);
         return new SubdivideLinkModification(newVertex, newVertexIndex, newLink1Index, newLink1, newLink2Index, newLink2, oldLinkIndex, oldLink )
     }

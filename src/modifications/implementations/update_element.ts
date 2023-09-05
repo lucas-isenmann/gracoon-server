@@ -27,7 +27,7 @@ export class UpdateElement implements BoardModification {
                 } else if (this.param == "width"){
                     textZone.width = this.new_value;
                 } else {
-                    console.log("param ${this.param} not implemented")
+                    console.log(`parameter ${this.param} not implemented`)
                 }
             }
             return new Set();
@@ -39,19 +39,21 @@ export class UpdateElement implements BoardModification {
                 } else if (this.param == "weight"){
                     vertex.weight = this.new_value;
                 } else {
-                    console.log("param ${this.param} not implemented")
+                    console.log(`parameter ${this.param} not implemented`)
                 }
             }
             return new Set()
         }else if (this.kind == "Link" && board.graph.links.has(this.index)){
             const link = board.graph.links.get(this.index);
             if (link !== undefined){
-                if (this.param == "color"){
+                if (this.param == "cp"){
+                    link.cp = this.new_value;
+                } else if (this.param == "color"){
                     link.color = this.new_value;
                 } else if (this.param == "weight"){
                     link.weight = this.new_value;
                 } else {
-                    console.log("param ${this.param} not implemented")
+                    console.log(`parameter ${this.param} not implemented`)
                 }
             }
             return new Set()
@@ -63,7 +65,7 @@ export class UpdateElement implements BoardModification {
                 } else if (this.param == "width"){
                     stroke.width = this.new_value;
                 } else {
-                    console.log("param ${this.param} not implemented")
+                    console.log(`parameter ${this.param} not implemented`)
                 }
             }
             return new Set()
@@ -75,7 +77,7 @@ export class UpdateElement implements BoardModification {
                 } else if (this.param == "label"){
                     area.label = this.new_value;
                 } else {
-                    console.log("param ${this.param} not implemented")
+                    console.log(`parameter ${this.param} not implemented`)
                 }
             }
             return new Set()
@@ -93,7 +95,7 @@ export class UpdateElement implements BoardModification {
                 } else if (this.param == "width"){
                     textZone.width = this.old_value;
                 } else {
-                    console.log("param ${this.param} not implemented")
+                    console.log(`parameter ${this.param} not implemented`)
                 }
             }
             return new Set();
@@ -105,19 +107,21 @@ export class UpdateElement implements BoardModification {
                 } else if (this.param == "weight"){
                     vertex.weight = this.old_value;
                 } else {
-                    console.log("param ${this.param} not implemented")
+                    console.log(`parameter ${this.param} not implemented`)
                 }
             }
             return new Set([SENSIBILITY.COLOR])
         }else if (this.kind == "Link" && board.graph.links.has(this.index)){
             const link = board.graph.links.get(this.index);
             if (link !== undefined){
-                if (this.param == "color"){
+                if (this.param == "cp"){
+                    link.cp = this.old_value;
+                } else if (this.param == "color"){
                     link.color = this.old_value;
                 } else if (this.param == "weight"){
                     link.weight = this.old_value;
                 } else {
-                    console.log("param ${this.param} not implemented")
+                    console.log(`parameter ${this.param} not implemented`)
                 }
             }            return new Set()
         }else if (this.kind == "Stroke" && board.strokes.has(this.index)){
@@ -128,7 +132,7 @@ export class UpdateElement implements BoardModification {
                 } else if (this.param == "width"){
                     stroke.width = this.old_value;
                 } else {
-                    console.log("param ${this.param} not implemented")
+                    console.log(`parameter ${this.param} not implemented`)
                 }
             }
             return new Set()
@@ -140,7 +144,7 @@ export class UpdateElement implements BoardModification {
                 } else if (this.param == "label"){
                     area.label = this.old_value;
                 } else {
-                    console.log("param ${this.param} not implemented")
+                    console.log(`parameter ${this.param} not implemented`)
                 }
             }
             return new Set()

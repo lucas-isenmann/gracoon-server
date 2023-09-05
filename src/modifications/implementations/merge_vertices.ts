@@ -1,6 +1,10 @@
 import { Vertex, Link, SENSIBILITY, Graph, eqSet } from "gramoloss";
 import { BoardModification, ServerBoard } from "../modification";
 
+/**
+    deleted_links: links that are deleted during the implementation
+    modified_links_indices: links that are modifed
+ */
 export class MergeVertices implements BoardModification {
     index_vertex_fixed: number;
     index_vertex_to_remove: number;
@@ -30,7 +34,6 @@ export class MergeVertices implements BoardModification {
                         const fixed_end = board.graph.vertices.get(link.end_vertex);
                         if (fixed_end !== undefined){
                             link.transform_cp(v_fixed.pos, this.vertex_to_remove.pos, fixed_end.pos);
-
                         }
                     } else if ( link.end_vertex == this.index_vertex_to_remove){
                         link.end_vertex = this.index_vertex_fixed;
