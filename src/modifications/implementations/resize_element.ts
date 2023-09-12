@@ -1,5 +1,5 @@
-import { Area, Coord, Rectangle, Representation, SENSIBILITY } from "gramoloss";
-import { BoardModification, RESIZE_TYPE, ServerBoard } from "../modification";
+import { Area, Coord, Rectangle, Representation } from "gramoloss";
+import { BoardModification, RESIZE_TYPE, SENSIBILITY, ServerBoard } from "../modification";
 
 export class ResizeElement implements BoardModification {
     element: Area | Rectangle | Representation;

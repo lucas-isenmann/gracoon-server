@@ -1,12 +1,17 @@
-import { Vertex, Link, Stroke, Area, TextZone, SENSIBILITY } from "gramoloss";
-import { BoardModification, ServerBoard } from "../modification";
+import { Stroke, Area, TextZone, BasicVertexData, BasicLinkData, BasicVertex, BasicLink, Coord, ORIENTATION } from "gramoloss";
+import { HistBoard } from "../../hist_board";
+import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
+/**
+ * kind: the kind of the new element
+ * index: the index of the new element
+ */
 export class AddElement implements BoardModification {
     kind: string;
     index: number;
-    element: Vertex|Link|Stroke|Area|TextZone;
+    element: BasicVertex<BasicVertexData>|BasicLink<BasicVertexData, BasicLinkData>|Stroke|Area|TextZone;
     
-    constructor(kind: string, index: number, element: Vertex|Link|Stroke|Area|TextZone) {
+    constructor(kind: string, index: number, element: BasicVertex<BasicVertexData>|BasicLink<BasicVertexData, BasicLinkData>|Stroke|Area|TextZone) {
         this.kind = kind;
         this.index = index;
         this.element = element;
@@ -24,14 +29,14 @@ export class AddElement implements BoardModification {
             if ( board.graph.vertices.has(this.index) ){
                 return "index " + String(this.index) + " already exists in vertices";
             } else {
-                const element = this.element as Vertex;
+                const element = this.element as BasicVertex<BasicVertexData>;
                 board.graph.vertices.set(this.index, element);
             }
         }else if (this.kind == "Link"){
             if ( board.graph.links.has(this.index) ){
                 return "index " + String(this.index) + " already exists in links";
             } else {
-                const link = this.element as Link;
+                const link = this.element as BasicLink<BasicVertexData, BasicLinkData>;
                 if (board.graph.check_link(link)){
                     board.graph.links.set(this.index, link);
                 } else {
@@ -69,5 +74,61 @@ export class AddElement implements BoardModification {
             board.graph.links.delete(this.index);
         }
         return new Set();
+    }
+
+
+    static fromBoard(board: HistBoard, kind: string, data: any): AddElement | undefined{
+        let newIndex: number;
+        let newElement;
+
+        if (kind == "Stroke") {
+            newIndex = board.get_next_available_index_strokes();
+            const positions = new Array();
+            data.points.forEach((e: any) => {
+                const pos = new Coord(e[1].x, e[1].y);
+                positions.push(pos);
+            });
+            newElement = new Stroke(positions, data.color, data.width);
+        } else if (kind == "Area") {
+            newIndex = board.get_next_available_index_area();
+            const c1 = new Coord(data.c1.x, data.c1.y);
+            const c2 = new Coord(data.c2.x, data.c2.y);
+            newElement = new Area(data.label + newIndex, c1, c2, data.color);
+        }
+        else if (kind == "TextZone") {
+            newIndex = board.get_next_available_index_text_zone();
+            const pos = new Coord(data.pos.x, data.pos.y);
+            newElement = new TextZone(pos, 200, "new text zone");
+        } else if (kind == "Vertex") {
+            newIndex = board.graph.get_next_available_index_vertex();
+            const pos = new Coord(data.pos.x, data.pos.y);
+            const newVertexData = new BasicVertexData(new Coord(pos.x, pos.y), "", "black");
+            newElement = new BasicVertex(newIndex, newVertexData);
+        } else if (kind == "Link") {
+            newIndex = board.graph.get_next_available_index_links();
+            let orient = ORIENTATION.UNDIRECTED;
+            switch (data.orientation) {
+                case "UNDIRECTED":
+                    orient = ORIENTATION.UNDIRECTED
+                    break;
+                case "DIRECTED":
+                    orient = ORIENTATION.DIRECTED
+                    break;
+            }
+            const startVertex = board.graph.vertices.get(data.start_index);
+            const endVertex = board.graph.vertices.get(data.end_index);
+            if (typeof startVertex != "undefined" && typeof endVertex != "undefined"){
+                const newLinkData = new BasicLinkData(undefined, "", "black");
+                newElement = new BasicLink(newIndex, startVertex, endVertex, orient, newLinkData );
+            } else {
+                console.log(`Error: AddElement.fromBoard: trying to add a link between undefined vertex index ${data.start_index} or ${data.end_index}`);
+                return undefined;
+            }
+        } else {
+            console.log(`Error: AddElement.fromBoard: kind is not supported: ${kind}`);
+            return undefined;
+        }
+
+        return new AddElement(kind, newIndex, newElement);
     }
 }

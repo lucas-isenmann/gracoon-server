@@ -1,4 +1,4 @@
-import { SENSIBILITY, Vertex, Coord, Link, ORIENTATION, Stroke, Area, Vect, TextZone, Representation, Rectangle } from "gramoloss";
+import { Vertex, Coord, Link, ORIENTATION, Area, Vect, Representation, Rectangle, BasicVertexData, BasicLinkData, BasicVertex, BasicLink } from "gramoloss";
 import ENV from './.env.json';
 import { HistBoard } from './hist_board';
 import { AddElement } from './modifications/implementations/add_element';
@@ -9,7 +9,7 @@ import { MergeVertices } from './modifications/implementations/merge_vertices';
 import { ResizeElement } from './modifications/implementations/resize_element';
 import { TranslateElements } from './modifications/implementations/translate_elements';
 import { UpdateElement } from './modifications/implementations/update_element';
-import { RESIZE_TYPE } from './modifications/modification';
+import { RESIZE_TYPE, SENSIBILITY } from './modifications/modification';
 import { getRandomColor, User, users } from './user';
 import { eq_indices, makeid } from './utils';
 
@@ -60,7 +60,7 @@ io.sockets.on('connection', function (client: Socket) {
     client.emit('room_id', room_id); // useless ? TODO remove
     console.log("new room : ", room_id);
     let board = new HistBoard();
-    board.graph.set_vertex(0, new Vertex(200, 100, ""));
+    // board.graph.set_vertex(0, new Vertex(200, 100, ""));
     emit_graph_to_room(board, room_id, new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC]));
     emit_strokes_to_room();
     emit_areas_to_room();
@@ -231,16 +231,18 @@ io.sockets.on('connection', function (client: Socket) {
     // ------------------------
 
     function handleApplyModifyer(name: string, attributesData: Array<any>) {
-        const old_vertices = new Map();
-        const old_links = new Map();
+        console.log("Handle: apply modifyer")
+        const oldVertices = new Map();
+        const oldLinks = new Map();
         for (const [index, vertex] of board.graph.vertices.entries()) {
-            const old_vertex = new Vertex(vertex.pos.x, vertex.pos.y, vertex.weight);
-            old_vertex.color = vertex.color;
-            old_vertices.set(index, old_vertex);
+            const oldVertexData = new BasicVertexData(vertex.data.pos, vertex.data.weight, vertex.data.color);
+            const oldVertex = new Vertex(index, oldVertexData);
+            oldVertices.set(index, oldVertex);
         }
         for (const [index, link] of board.graph.links.entries()) {
-            const old_link = new Link(link.start_vertex, link.end_vertex, link.cp, link.orientation, link.color, link.weight);
-            old_links.set(index, old_link);
+            const oldLinkData = new BasicLinkData(link.data.cp, link.data.weight, link.data.color);
+            const oldLink = new Link(index, link.startVertex, link.endVertex, link.orientation, oldLinkData);
+            oldLinks.set(index, oldLink);
         }
 
         if (name == "into_tournament") {
@@ -255,14 +257,15 @@ io.sockets.on('connection', function (client: Socket) {
                 for (const index of board.graph.vertices.keys()) {
                     all_vertices_indices.push(index);
                 }
-                board.graph.complete_subgraph_into_tournament(all_vertices_indices, (x, y) => { return new Link(x, y, "", ORIENTATION.DIRECTED, "black", "") })
+                board.graph.completeSubgraphIntoTournament(all_vertices_indices, (index: number, startVertex: BasicVertex<BasicVertexData>, endVertex: BasicVertex<BasicVertexData>) => { return new BasicLink(index, startVertex, endVertex, ORIENTATION.DIRECTED, new BasicLinkData(undefined, "", "black")) })
             } else {
                 const area = board.areas.get(area_index);
                 if (area  !== undefined){
                     const vertices_indices = board.graph.vertices_contained_by_area(area);
-                    board.graph.complete_subgraph_into_tournament(vertices_indices, (x, y) => { return new Link(x, y, "", ORIENTATION.DIRECTED, "black", "") });
+                    board.graph.completeSubgraphIntoTournament(vertices_indices, (index: number, startVertex: BasicVertex<BasicVertexData>, endVertex: BasicVertex<BasicVertexData>) => { return new BasicLink(index, startVertex, endVertex, ORIENTATION.DIRECTED, new BasicLinkData(undefined, "", "black")) })
                 }
             }
+
             // emit_graph_to_room(new Set([SENSIBILITY.ELEMENT])); // TODO change to Modification
         } else if (name == "removeRandomLinks"){
             if (attributesData.length != 2) {
@@ -283,7 +286,7 @@ io.sockets.on('connection', function (client: Socket) {
                     if (area  !== undefined){
                         const areaVIndices = board.graph.vertices_contained_by_area(area);
                         for (const [index, link] of board.graph.links.entries()) {
-                            if (areaVIndices.has(link.start_vertex) && Math.random() < p){
+                            if (areaVIndices.has(link.startVertex.index) && Math.random() < p){
                                 board.graph.links.delete(index);
                             }
                         }
@@ -295,81 +298,44 @@ io.sockets.on('connection', function (client: Socket) {
         const new_vertices = new Map();
         const new_links = new Map();
         for (const [index, vertex] of board.graph.vertices.entries()) {
-            const new_vertex = new Vertex(vertex.pos.x, vertex.pos.y, vertex.weight);
-            new_vertex.color = vertex.color;
-            new_vertices.set(index, new_vertex);
+            const newVertexData = new BasicVertexData(vertex.data.pos.copy(), vertex.data.weight, vertex.data.color);
+            const newVertex = new Vertex(index, newVertexData);
+            new_vertices.set(index, newVertex);
         }
         for (const [index, link] of board.graph.links.entries()) {
-            const new_link = new Link(link.start_vertex, link.end_vertex, link.cp, link.orientation, link.color, link.weight);
-            new_links.set(index, new_link);
+            const newLinkData = new BasicLinkData(undefined, link.data.weight, link.data.color);
+            if (typeof link.data.cp != "undefined" ){
+                newLinkData.cp = link.data.cp.copy();
+            }
+            const newLink = new Link(index, link.startVertex, link.endVertex, link.orientation, newLinkData);
+            new_links.set(index, newLink);
         }
 
-        const modif = new ApplyModifyer(old_vertices, old_links, new_vertices, new_links);
+        const modif = new ApplyModifyer(oldVertices, oldLinks, new_vertices, new_links);
         board.append_modification_already_implemented(modif);
         emit_graph_to_room(board, room_id, new Set([SENSIBILITY.ELEMENT]));
     }
 
     function handle_add_element(kind: string, data: any, callback: (created_index: number) => void) {
-        // console.log("handle_add_element", kind, data);
-        let new_index: number;
-        let new_element;
-
-        if (kind == "Stroke") {
-            new_index = board.get_next_available_index_strokes();
-            const positions = new Array();
-            data.points.forEach((e: any) => {
-                const pos = new Coord(e[1].x, e[1].y);
-                positions.push(pos);
-            });
-            new_element = new Stroke(positions, data.color, data.width);
-        } else if (kind == "Area") {
-            new_index = board.get_next_available_index_area();
-            const c1 = new Coord(data.c1.x, data.c1.y);
-            const c2 = new Coord(data.c2.x, data.c2.y);
-            new_element = new Area(data.label + new_index, c1, c2, data.color);
+        console.log("Handle: add_element", kind, data);
+        const modif = AddElement.fromBoard(board, kind, data);
+        if (typeof modif == "undefined"){
+            console.log("Error: handle add element: impossible to create AddElement");
+            return;
         }
-        else if (kind == "TextZone") {
-            new_index = board.get_next_available_index_text_zone();
-            const pos = new Coord(data.pos.x, data.pos.y);
-            new_element = new TextZone(pos, 200, "new text zone");
-        } else if (kind == "Vertex") {
-            new_index = board.graph.get_next_available_index_vertex();
-            const pos = new Coord(data.pos.x, data.pos.y);
-            new_element = new Vertex(pos.x, pos.y, "");
-        } else if (kind == "Link") {
-            new_index = board.graph.get_next_available_index_links();
-            let orient = ORIENTATION.UNDIRECTED;
-            switch (data.orientation) {
-                case "UNDIRECTED":
-                    orient = ORIENTATION.UNDIRECTED
-                    break;
-                case "DIRECTED":
-                    orient = ORIENTATION.DIRECTED
-                    break;
-            }
-            // const start_vertex = board.graph.vertices.get(data.start_index);
-            // const end_vertex = board.graph.vertices.get(data.end_index);
-            // new_element = new Link(data.start_index, data.end_index, middle(start_vertex.pos, end_vertex.pos) , orient, "black", "");
-            new_element = new Link(data.start_index, data.end_index, "", orient, "black", "");
-        } else {
-            console.log("kind is not supported: ", kind);
-            return
-        }
-
-        const modif = new AddElement(kind, new_index, new_element);
         const r = board.try_push_new_modification(modif);
         if (typeof r === "string") {
             console.log(r);
         } else {
-            callback(new_index);
-            broadcast("add_elements", [{ kind: kind, index: new_index, element: new_element }], new Set());
+            callback(modif.index);
+            broadcast("add_elements", [{ kind: kind, index: modif.index, element: modif.element }], new Set());
         }
     }
 
 
     function handle_translate_elements(indices: Array<[string, number]>, raw_shift: any) {
-        // console.log("handle_translate_elements", indices);
-        let shift = new Vect(raw_shift.x, raw_shift.y);
+        console.log("Handle: translate_elements", indices);
+        const shift = new Vect(raw_shift.x, raw_shift.y);
         // console.log(shift);
 
         if (board.modifications_stack.length > 0) {
@@ -394,27 +360,27 @@ io.sockets.on('connection', function (client: Socket) {
     }
 
     function handle_delete_elements(indices: Array<[string, number]>) {
-        console.log("handle_delete_elements", indices);
-        const modif = DeleteElements.from_indices(board, indices);
-        if (typeof modif === "string") {
-            console.log(modif);
+        console.log("Handle: delete_elements", indices);
+        const modif = DeleteElements.fromBoard(board, indices);
+        if (typeof modif === "undefined") {
+            console.log(`Error: cannot create DeleteElements from indices ${indices}`);
+            return;
+        }
+        const r = board.try_push_new_modification(modif);
+        if (typeof r === "string") {
+            console.log(r);
         } else {
-            const r = board.try_push_new_modification(modif);
-            if (typeof r === "string") {
-                console.log(r);
-            } else {
-                broadcast("delete_elements", indices, new Set());
-            }
+            broadcast("delete_elements", indices, new Set());
         }
     }
 
 
 
     function handle_update_element(kind: string, index: number, param: string, new_value: any) {
-        // console.log("handle_update_element", kind, index, param, new_value);
+        console.log("Handle: update_element", kind, index, param, new_value);
         const old_value = board.get_value(kind, index, param);
         if (param == "cp") {
-            if (typeof new_value != "string") {
+            if (typeof new_value != "undefined") {
                 new_value = new Coord(new_value.x, new_value.y);
             }
         }
@@ -428,7 +394,7 @@ io.sockets.on('connection', function (client: Socket) {
     }
 
     function handle_undo() {
-        console.log("Receive Request: undo2");
+        console.log("Handle: undo");
         const r = board.cancel_last_modification();
         if (typeof r === "string") {
             console.log(r);
@@ -452,11 +418,11 @@ io.sockets.on('connection', function (client: Socket) {
                 case GraphPaste: {
                     const modif = r as GraphPaste;
                     const indices = new Array();
-                    for (const [index, vertex] of modif.added_vertices) {
-                        indices.push(["Vertex", index]);
+                    for (const vertex of modif.addedVertices) {
+                        indices.push(["Vertex", vertex.index]);
                     }
-                    for (const [index, link] of modif.added_links) {
-                        indices.push(["Link", index]);
+                    for (const link of modif.addedLinks) {
+                        indices.push(["Link", link.index]);
                     }
                     broadcast("delete_elements", indices, new Set());
                     break;
@@ -511,7 +477,7 @@ io.sockets.on('connection', function (client: Socket) {
     }
 
     function handle_redo() {
-        console.log("Receive Request: redo");
+        console.log("Handle: redo");
 
         const r = board.redo();
         if (typeof r === "string") {
@@ -536,11 +502,11 @@ io.sockets.on('connection', function (client: Socket) {
                 case GraphPaste: {
                     const modif = r as GraphPaste;
                     const elements = new Array();
-                    for (const [index, vertex] of modif.added_vertices) {
-                        elements.push({ kind: "Vertex", index: index, element: vertex });
+                    for (const vertex of modif.addedVertices) {
+                        elements.push({ kind: "Vertex", index: vertex.index, element: vertex });
                     }
-                    for (const [index, link] of modif.added_links) {
-                        elements.push({ kind: "Link", index: index, element: link });
+                    for (const link of modif.addedLinks) {
+                        elements.push({ kind: "Link", index: link.index, element: link });
                     }
                     broadcast("add_elements", elements, new Set());
                     break;
@@ -641,8 +607,9 @@ io.sockets.on('connection', function (client: Socket) {
 
         const data = JSON.parse(s);
         for (const vdata of data.vertices) {
-            const new_vertex = new Vertex(vdata[1]["pos"]["x"], vdata[1]["pos"]["y"], "");
-            board.graph.vertices.set(vdata[0], new_vertex)
+            const newVertexData = new BasicVertexData(new Coord(data[1]["pos"]["x"], vdata[1]["pos"]["y"]), "", "black");
+            const newVertex = new BasicVertex(vdata[0], newVertexData);
+            board.graph.vertices.set(vdata[0], newVertex)
         }
         for (const link of data.links) {
             // TODO
@@ -650,6 +617,8 @@ io.sockets.on('connection', function (client: Socket) {
         }
         emit_graph_to_room(board, room_id, new Set([SENSIBILITY.COLOR, SENSIBILITY.ELEMENT, SENSIBILITY.GEOMETRIC]));
     }
+
+
 
     function handle_get_json(callback: (arg0: string) => void) {
         const graph_stringifiable = {
@@ -666,17 +635,18 @@ io.sockets.on('connection', function (client: Socket) {
 
     function handle_vertices_merge(vertex_index_fixed: number, vertex_index_to_remove: number) {
         console.log("Receive Request: vertices_merge");
-        const vertexFixed = board.graph.vertices.get(vertex_index_fixed);
-        const vertexToRemove = board.graph.vertices.get(vertex_index_to_remove);
-        if (vertexFixed !== undefined && vertexToRemove !== undefined) {
-            board.cancel_last_modification(); // TODO its not necessarily the last which is a translate
-            const modif = MergeVertices.from_graph(board.graph, vertexFixed, vertex_index_fixed, vertexToRemove, vertex_index_to_remove);
-            const r = board.try_push_new_modification(modif);
-            if (typeof r === "string") {
-                console.log(r);
-            } else {
-                emit_graph_to_room(board, room_id, r);
-            }
+        board.cancel_last_modification(); // TODO its not necessarily the last which is a translate
+        const modif = MergeVertices.fromBoard(board,  vertex_index_fixed, vertex_index_to_remove);
+        if (typeof modif == "undefined"){
+            console.log(`Error: cannot create MergeVertices`);
+            return;
+        }
+
+        const r = board.try_push_new_modification(modif);
+        if (typeof r === "string") {
+            console.log(r);
+        } else {
+            emit_graph_to_room(board, room_id, r);
         }
     }
 
@@ -685,17 +655,16 @@ io.sockets.on('connection', function (client: Socket) {
     function handle_paste_graph(verticesEntries: any[], linksEntries: any[]) {
         console.log("Receive Request: paste graph");
 
-        const added_vertices = new Map<number, Vertex>();
-        const added_links = new Map<number, Link>();
-        const vertex_indices_transformation = new Map<number, number>();
+        const addedVertices = new Map<number, BasicVertex<BasicVertexData>>();
+        const addedLinks = new Array<BasicLink<BasicVertexData, BasicLinkData>>();
+        const vertex_indices_transformation = new Map<number, number>(); // used to translate the vertices indices in the added links
         const new_vertex_indices: Array<number> = board.graph.get_next_n_available_vertex_indices(verticesEntries.length);
         let i = 0;
         for (const data of verticesEntries) {
-            console.log(data[1].index);
-            console.log(data[1].data);
-            const vertex = new Vertex(data[1].data.pos.x, data[1].data.pos.y, "");
-            added_vertices.set(new_vertex_indices[i], vertex);
-            vertex_indices_transformation.set(data[1].index, new_vertex_indices[i]);
+            const vertexData = new BasicVertexData(new Coord(data[1].data.pos.x, data[1].data.pos.y), "", "black");
+            const vertex = new BasicVertex(new_vertex_indices[i], vertexData);
+            addedVertices.set(vertex.index, vertex);
+            vertex_indices_transformation.set(data[1].index, vertex.index);
             i++;
         }
 
@@ -712,31 +681,38 @@ io.sockets.on('connection', function (client: Socket) {
                     break;
             }
             const startIndex = vertex_indices_transformation.get(data[1].startVertex.index);
-            console.log("link: startIndex ", startIndex);
+            // console.log("link: startIndex ", startIndex);
             const endIndex = vertex_indices_transformation.get(data[1].endVertex.index);
             if (typeof startIndex == "number" && typeof endIndex == "number") {
-                let cp: string | Coord = "";
+                let cp: undefined | Coord = undefined;
                 if ( data[1].data.cp ){
                     cp =  new Coord(data[1].data.cp.x, data[1].data.cp.y);
                 }
-                const link = new Link(startIndex, endIndex, cp, orient, data[1].data.color, data[1].data.weight);
-                added_links.set(new_link_indices[j], link);
+                const startVertex = addedVertices.get(startIndex);
+                const endVertex = addedVertices.get(endIndex);
+                if (typeof startVertex == "undefined" || typeof endVertex == "undefined"){
+                    console.log(`Error: cannot create GraphPaste: cannot get new startVertex or new endVertex at indices ${startIndex} ${endIndex}`)
+                    return;
+                }
+                const linkData = new BasicLinkData(cp, data[1].data.weight, data[1].data.color);
+                const link = new BasicLink(new_link_indices[j], startVertex, endVertex, orient, linkData);
+                addedLinks.push( link);
                 j++;
             }
            
         }
 
-        const modif = new GraphPaste(added_vertices, added_links);
+        const modif = new GraphPaste([...addedVertices.values()], addedLinks);
         const r = board.try_push_new_modification(modif);
         if (typeof r === "string") {
             console.log(r);
         } else {
             const elements = new Array();
-            for (const [index, vertex] of modif.added_vertices) {
-                elements.push({ kind: "Vertex", index: index, element: vertex });
+            for (const vertex of modif.addedVertices) {
+                elements.push({ kind: "Vertex", index: vertex.index, element: vertex });
             }
-            for (const [index, link] of modif.added_links) {
-                elements.push({ kind: "Link", index: index, element: link });
+            for (const link of modif.addedLinks) {
+                elements.push({ kind: "Link", index: link.index, element: link });
             }
             broadcast("add_elements", elements, new Set());
             // emit_graph_to_room(new Set([SENSIBILITY.ELEMENT]));

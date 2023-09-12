@@ -1,6 +1,6 @@
 {
   "name": "gracoon-server",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "",
   "main": "dist/src/index.js",
   "scripts": {
@@ -18,7 +18,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "gramoloss": "^1.1.2",
+    "gramoloss": "^1.8.0",
     "nodemon": "^2.0.22",
     "socket.io": "^4.6.2",
     "ts-node": "^10.9.1",

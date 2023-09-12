@@ -1,4 +1,11 @@
-import { Board, Vertex, Link, Stroke, Area, TextZone, Representation, Rectangle, SENSIBILITY } from "gramoloss";
+import { Board, Vertex, Link, Stroke, Area, TextZone, Representation, Rectangle, BasicVertexData, BasicLinkData, BasicVertex } from "gramoloss";
+
+export enum SENSIBILITY {
+    GEOMETRIC = "GEOMETRIC", // Move of vertex/link
+    COLOR = "COLOR", // Change of color for vertices/links
+    ELEMENT = "ELEMENT", // Create/delete vertex/link
+    WEIGHT = "WEIGHT"
+}
 
 export enum RESIZE_TYPE {
     BOTTOM = "BOTTOM",
@@ -11,9 +18,10 @@ export enum RESIZE_TYPE {
     BOTTOM_LEFT = "BOTTOM_LEFT"
 }
 
-export class ServerBoard extends Board<Vertex, Link, Stroke, Area, TextZone, Representation, Rectangle>{
+export class ServerBoard extends Board<BasicVertexData, BasicLinkData, Stroke, Area, TextZone, Representation, Rectangle>{
     
 }
+
 
 export interface BoardModification { 
     try_implement(board: ServerBoard): Set<SENSIBILITY> | string;

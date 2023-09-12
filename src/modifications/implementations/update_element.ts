@@ -1,5 +1,5 @@
-import { SENSIBILITY } from "gramoloss";
-import { BoardModification, ServerBoard } from "../modification";
+import {  } from "gramoloss";
+import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 
 
@@ -35,9 +35,9 @@ export class UpdateElement implements BoardModification {
             const vertex = board.graph.vertices.get(this.index);
             if (vertex !== undefined){
                 if (this.param == "color"){
-                    vertex.color = this.new_value;
+                    vertex.data.color = this.new_value;
                 } else if (this.param == "weight"){
-                    vertex.weight = this.new_value;
+                    vertex.data.weight = this.new_value;
                 } else {
                     console.log(`parameter ${this.param} not implemented`)
                 }
@@ -47,11 +47,11 @@ export class UpdateElement implements BoardModification {
             const link = board.graph.links.get(this.index);
             if (link !== undefined){
                 if (this.param == "cp"){
-                    link.cp = this.new_value;
+                    link.data.cp = this.new_value;
                 } else if (this.param == "color"){
-                    link.color = this.new_value;
+                    link.data.color = this.new_value;
                 } else if (this.param == "weight"){
-                    link.weight = this.new_value;
+                    link.data.weight = this.new_value;
                 } else {
                     console.log(`parameter ${this.param} not implemented`)
                 }
@@ -103,9 +103,9 @@ export class UpdateElement implements BoardModification {
             const vertex = board.graph.vertices.get(this.index);
             if (vertex !== undefined){
                 if (this.param == "color"){
-                    vertex.color = this.old_value;
+                    vertex.data.color = this.old_value;
                 } else if (this.param == "weight"){
-                    vertex.weight = this.old_value;
+                    vertex.data.weight = this.old_value;
                 } else {
                     console.log(`parameter ${this.param} not implemented`)
                 }
@@ -115,11 +115,11 @@ export class UpdateElement implements BoardModification {
             const link = board.graph.links.get(this.index);
             if (link !== undefined){
                 if (this.param == "cp"){
-                    link.cp = this.old_value;
+                    link.data.cp = this.old_value;
                 } else if (this.param == "color"){
-                    link.color = this.old_value;
+                    link.data.color = this.old_value;
                 } else if (this.param == "weight"){
-                    link.weight = this.old_value;
+                    link.data.weight = this.old_value;
                 } else {
                     console.log(`parameter ${this.param} not implemented`)
                 }

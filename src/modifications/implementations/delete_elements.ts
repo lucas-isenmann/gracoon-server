@@ -1,14 +1,17 @@
-import { Vertex, Link, Stroke, Area, TextZone, Representation, SENSIBILITY } from "gramoloss";
-import { BoardModification, ServerBoard } from "../modification";
+import { Stroke, Area, TextZone, Representation, BasicVertex, BasicLink, BasicVertexData, BasicLinkData } from "gramoloss";
+import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
+/**
+ * Contains the list of the deleted elements
+ */
 export class DeleteElements implements BoardModification {
-    vertices: Map<number, Vertex>;
-    links: Map<number, Link>;
+    vertices: Map<number, BasicVertex<BasicVertexData>>;
+    links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>;
     strokes: Map<number, Stroke>;
     areas: Map<number, Area>;
     text_zones: Map<number, TextZone>;
 
-    constructor(vertices: Map<number, Vertex>, links: Map<number, Link>, strokes: Map<number, Stroke>, areas: Map<number, Area>, text_zones: Map<number, TextZone>) {
+    constructor(vertices: Map<number, BasicVertex<BasicVertexData>>, links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>, strokes: Map<number, Stroke>, areas: Map<number, Area>, text_zones: Map<number, TextZone>) {
         this.vertices = vertices;
         this.links = links;
         this.strokes = strokes;
@@ -16,33 +19,44 @@ export class DeleteElements implements BoardModification {
         this.text_zones = text_zones;
     }
 
-    static from_indices<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation>(board: ServerBoard, indices: Array<[string, number]>){
+    static fromBoard(board: ServerBoard, indices: Array<[string, number]>): DeleteElements | undefined{
         const vertices = new Map();
         const links = new Map();
         const strokes = new Map();
         const areas = new Map();
-        const text_zones = new Map();
+        const textZones = new Map();
         for (const [kind, index] of indices){
             if (kind == "Vertex"){
-                vertices.set(index, board.graph.vertices.get(index));
+                const deletedVertex = board.graph.vertices.get(index);
+                if (typeof deletedVertex == "undefined"){
+                    console.log(`Error: DeleteElements.fromBoard: vertex index ${index} does not exists`);
+                    return undefined;
+                }
+                vertices.set(index, deletedVertex);
                 board.graph.links.forEach((link, link_index) => {
-                    if (link.end_vertex === index || link.start_vertex === index) {
+                    if (link.endVertex.index === index || link.startVertex.index === index) {
                         links.set(link_index, link);
                     }
                 })
             } else if (kind == "Link"){
-                links.set(index, board.graph.links.get(index));
+                const deletedLink = board.graph.links.get(index);
+                if (typeof deletedLink == "undefined"){
+                    console.log(`Error: DeleteElements.fromBoard: link index ${index} does not exists`);
+                    return undefined;
+                }
+                links.set(index, deletedLink);
             } else if (kind == "Stroke"){
                 strokes.set(index, board.strokes.get(index));
             } else if (kind == "Area"){
                 areas.set(index, board.areas.get(index));
             } else if (kind == "TextZone"){
-                text_zones.set(index, board.text_zones.get(index));
+                textZones.set(index, board.text_zones.get(index));
             } else {
-                return "Error: kind not supported " + kind
+                console.log(`Error: DeleteElements.fromBoard: kind ${kind} not supported`);
+                return undefined;
             }
         }
-        return new DeleteElements(vertices, links, strokes, areas, text_zones);
+        return new DeleteElements(vertices, links, strokes, areas, textZones);
     }
 
     try_implement(board: ServerBoard): Set<SENSIBILITY> | string{

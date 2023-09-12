@@ -10,12 +10,16 @@ export function handleSubdivideLink(board: HistBoard, roomId: string, linkIndex:
     const link = board.graph.links.get(linkIndex);
     
     if (link !== undefined) {
-        const modif = SubdivideLinkModification.fromGraph(board.graph, linkIndex, link, pos);
+        const modif = SubdivideLinkModification.fromGraph(board, linkIndex, pos);
+        if (typeof modif == "undefined"){
+            console.log(`Error: cannot create Subdivide Link`);
+            return;
+        }
         const r = board.try_push_new_modification(modif);
         if (typeof r === "string") {
             console.log(r);
         } else {
-            callback(modif.newVertexIndex);
+            callback(modif.newVertex.index);
             emit_graph_to_room(board, roomId, r);
         }
     }

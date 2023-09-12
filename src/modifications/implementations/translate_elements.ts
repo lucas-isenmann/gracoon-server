@@ -1,5 +1,5 @@
-import { Vect, SENSIBILITY } from "gramoloss";
-import { BoardModification, ServerBoard } from "../modification";
+import { Vect } from "gramoloss";
+import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 export class TranslateElements implements BoardModification {
     indices: Array<[string,number]>;
@@ -35,8 +35,8 @@ export class TranslateElements implements BoardModification {
             } else if (kind == "ControlPoint"){
                 const link = board.graph.links.get(index);
                 if (link !== undefined){
-                    if ( typeof link.cp != "string"){
-                        link.cp.translate(this.shift);
+                    if ( typeof link.data.cp != "undefined"){
+                        link.data.cp.translate(this.shift);
                     }
                 }else {
                     return "Error: index not in links";
@@ -71,8 +71,8 @@ export class TranslateElements implements BoardModification {
             } else if (kind == "ControlPoint"){
                 const link = board.graph.links.get(index);
                 if (link !== undefined){
-                    if ( typeof link.cp != "string"){
-                        link.cp.rtranslate(this.shift);
+                    if ( typeof link.data.cp != "undefined"){
+                        link.data.cp.rtranslate(this.shift);
                     }
                 }
             } else if (kind == "Vertex"){

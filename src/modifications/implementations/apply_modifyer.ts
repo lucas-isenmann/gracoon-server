@@ -1,13 +1,13 @@
-import { Vertex, Link, SENSIBILITY } from "gramoloss";
-import { BoardModification, ServerBoard } from "../modification";
+import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData } from "gramoloss";
+import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 export class ApplyModifyer implements BoardModification {
-    old_vertices: Map<number, Vertex>;
-    old_links: Map<number, Link>;
-    new_vertices: Map<number, Vertex>;
-    new_links: Map<number, Link>;
+    old_vertices: Map<number, BasicVertex<BasicVertexData>>;
+    old_links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>;
+    new_vertices: Map<number, BasicVertex<BasicVertexData>>;
+    new_links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>;
 
-    constructor(old_vertices: Map<number, Vertex>, old_links: Map<number, Link>, new_vertices: Map<number, Vertex>,        new_links: Map<number, Link>){
+    constructor(old_vertices: Map<number, BasicVertex<BasicVertexData>>, old_links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>, new_vertices: Map<number, BasicVertex<BasicVertexData>>,        new_links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>){
         this.old_vertices = old_vertices;
         this.old_links = old_links;
         this.new_vertices = new_vertices;

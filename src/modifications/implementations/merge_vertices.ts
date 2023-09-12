@@ -1,79 +1,61 @@
-import { Vertex, Link, SENSIBILITY, Graph, eqSet } from "gramoloss";
-import { BoardModification, ServerBoard } from "../modification";
+import { eqSet, BasicVertex, BasicVertexData, BasicLinkData, BasicLink } from "gramoloss";
+import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 /**
     deleted_links: links that are deleted during the implementation
     modified_links_indices: links that are modifed
  */
 export class MergeVertices implements BoardModification {
-    index_vertex_fixed: number;
-    index_vertex_to_remove: number;
-    vertex_to_remove: Vertex;
-    deleted_links: Map<number, Link>;
+    vertexFixed: BasicVertex<BasicVertexData>;
+    vertex_to_remove: BasicVertex<BasicVertexData>;
+    deleted_links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>;
     modified_links_indices: Array<number>;
 
-    constructor(index_vertex_fixed: number, index_vertex_to_remove: number, vertex_to_remove: Vertex, deleted_links: Map<number, Link>, modified_links_indices: Array<number>) {
-        this.index_vertex_fixed = index_vertex_fixed;
-        this.index_vertex_to_remove = index_vertex_to_remove;
+    constructor(vertexFixed: BasicVertex<BasicVertexData>, vertex_to_remove: BasicVertex<BasicVertexData>, deleted_links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>, modified_links_indices: Array<number>) {
+        this.vertexFixed = vertexFixed;
         this.vertex_to_remove = vertex_to_remove;
         this.deleted_links = deleted_links;
         this.modified_links_indices = modified_links_indices;
     }
 
     try_implement(board: ServerBoard): Set<SENSIBILITY> | string{
-        const v_fixed = board.graph.vertices.get(this.index_vertex_fixed);
-        if (v_fixed !== undefined){
-            for (const link_index of this.deleted_links.keys()){
-                board.graph.links.delete(link_index);
-            }
-            for (const link_index of this.modified_links_indices.values()){
-                const link = board.graph.links.get(link_index);
-                if (link !== undefined){
-                    if ( link.start_vertex == this.index_vertex_to_remove){
-                        link.start_vertex = this.index_vertex_fixed;
-                        const fixed_end = board.graph.vertices.get(link.end_vertex);
-                        if (fixed_end !== undefined){
-                            link.transform_cp(v_fixed.pos, this.vertex_to_remove.pos, fixed_end.pos);
-                        }
-                    } else if ( link.end_vertex == this.index_vertex_to_remove){
-                        link.end_vertex = this.index_vertex_fixed;
-                        const fixed_end = board.graph.vertices.get(link.start_vertex);
-                        if (fixed_end !== undefined){
-                            link.transform_cp(v_fixed.pos, this.vertex_to_remove.pos, fixed_end.pos);
-                        }
-                    }
+        for (const link_index of this.deleted_links.keys()){
+            board.graph.links.delete(link_index);
+        }
+        for (const link_index of this.modified_links_indices.values()){
+            const link = board.graph.links.get(link_index);
+            if (typeof link !== "undefined"){
+                if ( link.startVertex.index == this.vertex_to_remove.index){
+                    link.startVertex = this.vertexFixed;
+                    const fixed_end = link.endVertex;
+                    link.transformCP( this.vertexFixed.data.pos, this.vertex_to_remove.data.pos, fixed_end.data.pos);
+                } else if ( link.endVertex.index == this.vertex_to_remove.index){
+                    link.endVertex = this.vertexFixed;
+                    const fixed_end = link.startVertex;
+                    link.transformCP(this.vertexFixed.data.pos, this.vertex_to_remove.data.pos, fixed_end.data.pos);
                 }
             }
-            board.graph.delete_vertex(this.index_vertex_to_remove);
         }
-
-        
+        board.graph.delete_vertex(this.vertex_to_remove.index);
         return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
     }
 
     deimplement(board: ServerBoard): Set<SENSIBILITY>{
-        const v_fixed = board.graph.vertices.get(this.index_vertex_fixed);
-        if (v_fixed !== undefined){
-            board.graph.vertices.set(this.index_vertex_to_remove, this.vertex_to_remove);
-            for (const [link_index, link] of this.deleted_links.entries()) {
-                board.graph.links.set(link_index, link);
-            }
-            for (const link_index of this.modified_links_indices.values()) {
-                const link = board.graph.links.get(link_index);
-                if (link !== undefined){
-                    if (link.start_vertex == this.index_vertex_fixed){
-                        link.start_vertex = this.index_vertex_to_remove;
-                        const fixed_end = board.graph.vertices.get(link.end_vertex);
-                        if (fixed_end !== undefined){
-                            link.transform_cp(this.vertex_to_remove.pos, v_fixed.pos, fixed_end.pos);
-                        }
-                    } else if (link.end_vertex == this.index_vertex_fixed ){
-                        link.end_vertex = this.index_vertex_to_remove;
-                        const fixed_end = board.graph.vertices.get(link.start_vertex);
-                        if (fixed_end !== undefined){
-                            link.transform_cp(this.vertex_to_remove.pos, v_fixed.pos, fixed_end.pos);
-                        }
-                    }
+        board.graph.vertices.set(this.vertex_to_remove.index, this.vertex_to_remove);
+        for (const [link_index, link] of this.deleted_links.entries()) {
+            board.graph.links.set(link_index, link);
+        }
+        for (const link_index of this.modified_links_indices.values()) {
+            const link = board.graph.links.get(link_index);
+            if (link !== undefined){
+                if (link.startVertex.index == this.vertexFixed.index){
+                    link.startVertex = this.vertex_to_remove;
+                    const fixed_end = link.endVertex;
+                    link.transformCP(this.vertex_to_remove.data.pos, this.vertexFixed.data.pos, fixed_end.data.pos);
+                } else if (link.endVertex.index == this.vertexFixed.index ){
+                    link.endVertex = this.vertex_to_remove;
+                    const fixed_end = link.startVertex;
+                    link.transformCP(this.vertex_to_remove.data.pos, this.vertexFixed.data.pos, fixed_end.data.pos);
                 }
             }
         }
@@ -85,18 +67,25 @@ export class MergeVertices implements BoardModification {
     // does not modify the graph
     // any link between fixed and remove are deleted
     // any link such that one of its endpoints is "remove", is either deleted either modified
-    static from_graph(graph: Graph<Vertex,Link>, vertex_fixed: Vertex, vertex_index_fixed: number, vertex_to_remove: Vertex, vertex_index_to_remove: number ): MergeVertices{
+    static fromBoard(board: ServerBoard, vertex_index_fixed: number, vertex_index_to_remove: number ): MergeVertices | undefined{
+        const vertexFixed = board.graph.vertices.get(vertex_index_fixed);
+        const vertex_to_remove = board.graph.vertices.get(vertex_index_to_remove);
+        if (typeof vertexFixed == "undefined" || typeof vertex_to_remove == "undefined"){
+            console.log(`Error: cannot create MergeVertices: ${vertex_index_fixed} or ${vertex_index_to_remove} is not a valid vertex index.`)
+            return undefined;
+        }
+        
         const deleted_links = new Map();
         const modified_links_indices = new Array();
 
-        for ( const [link_index, link] of graph.links.entries()) {
-            const endpoints = new Set([link.start_vertex, link.end_vertex]);
+        for ( const [link_index, link] of board.graph.links.entries()) {
+            const endpoints = new Set([link.startVertex.index, link.endVertex.index]);
             if ( eqSet(endpoints, new Set([vertex_index_fixed, vertex_index_to_remove])) ){
                 deleted_links.set(link_index, link);
-            } else if (link.end_vertex == vertex_index_to_remove) {
+            } else if (link.endVertex.index == vertex_index_to_remove) {
                 let is_deleted = false;
-                for (const [index2, link2] of graph.links.entries()) {
-                    if ( index2 != link_index && link2.signature_equals(link.start_vertex, vertex_index_fixed, link.orientation )){
+                for (const [index2, link2] of board.graph.links.entries()) {
+                    if ( index2 != link_index && link2.signatureEquals(link.startVertex.index, vertex_index_fixed, link.orientation )){
                         deleted_links.set(link_index, link);
                         is_deleted = true;
                         break;
@@ -105,10 +94,10 @@ export class MergeVertices implements BoardModification {
                 if ( is_deleted == false ){
                     modified_links_indices.push(link_index);
                 }
-            } else if (link.start_vertex == vertex_index_to_remove) {
+            } else if (link.startVertex.index == vertex_index_to_remove) {
                 let is_deleted = false;
-                for (const [index2, link2] of graph.links.entries()) {
-                    if ( index2 != link_index && link2.signature_equals(vertex_index_fixed, link.end_vertex, link.orientation)){
+                for (const [index2, link2] of board.graph.links.entries()) {
+                    if ( index2 != link_index && link2.signatureEquals(vertex_index_fixed, link.endVertex.index, link.orientation)){
                         deleted_links.set(link_index, link);
                         is_deleted = true;
                         break;
@@ -120,6 +109,6 @@ export class MergeVertices implements BoardModification {
             }
         }
 
-        return new MergeVertices(vertex_index_fixed, vertex_index_to_remove, vertex_to_remove, deleted_links, modified_links_indices);
+        return new MergeVertices(vertexFixed,  vertex_to_remove, deleted_links, modified_links_indices);
     }
 }
