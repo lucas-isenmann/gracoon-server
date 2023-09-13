@@ -1,4 +1,5 @@
-import { Board, Vertex, Link, Stroke, Area, TextZone, Representation, Rectangle, BasicVertexData, BasicLinkData, BasicVertex } from "gramoloss";
+import { Board, Stroke, Area, TextZone, Representation, Rectangle, BasicVertexData, BasicLinkData } from "gramoloss";
+import { HistBoard } from "../hist_board";
 
 export enum SENSIBILITY {
     GEOMETRIC = "GEOMETRIC", // Move of vertex/link
@@ -26,4 +27,7 @@ export class ServerBoard extends Board<BasicVertexData, BasicLinkData, Stroke, A
 export interface BoardModification { 
     try_implement(board: ServerBoard): Set<SENSIBILITY> | string;
     deimplement(board: ServerBoard): Set<SENSIBILITY>;
+    firstEmitImplementation(board: HistBoard): void;
+    emitImplementation(board: HistBoard): void;
+    emitDeimplementation(board: HistBoard): void;
 };

@@ -1,4 +1,7 @@
 import { Stroke, Area, TextZone, BasicVertexData, BasicLinkData, BasicVertex, BasicLink, Coord, ORIENTATION } from "gramoloss";
+import { Socket } from "socket.io";
+import { broadcastInRoom } from "../..";
+import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
@@ -7,14 +10,17 @@ import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
  * index: the index of the new element
  */
 export class AddElement implements BoardModification {
+
     kind: string;
     index: number;
     element: BasicVertex<BasicVertexData>|BasicLink<BasicVertexData, BasicLinkData>|Stroke|Area|TextZone;
+    callback: (response: number) => void;
     
-    constructor(kind: string, index: number, element: BasicVertex<BasicVertexData>|BasicLink<BasicVertexData, BasicLinkData>|Stroke|Area|TextZone) {
+    constructor(kind: string, index: number, element: BasicVertex<BasicVertexData>|BasicLink<BasicVertexData, BasicLinkData>|Stroke|Area|TextZone,  callback: (response: number) => void ) {
         this.kind = kind;
         this.index = index;
         this.element = element;
+        this.callback = callback;
     }
 
     try_implement(board: ServerBoard): Set<SENSIBILITY> | string{
@@ -77,7 +83,7 @@ export class AddElement implements BoardModification {
     }
 
 
-    static fromBoard(board: HistBoard, kind: string, data: any): AddElement | undefined{
+    static fromBoard(board: HistBoard, kind: string, data: any, callback: (index: number) => void): AddElement | undefined{
         let newIndex: number;
         let newElement;
 
@@ -129,6 +135,29 @@ export class AddElement implements BoardModification {
             return undefined;
         }
 
-        return new AddElement(kind, newIndex, newElement);
+        return new AddElement(kind, newIndex, newElement, callback);
+    }
+
+    static handle(board: HistBoard, kind: string, data: any, callback: (created_index: number) => void) {
+        console.log(`Handle: add_element {kind: ${kind}, data: ${JSON.stringify(data)}}`);
+        const modif = AddElement.fromBoard(board, kind, data, callback);
+        handleBoardModification(board, modif);
+    }
+
+    firstEmitImplementation(board: HistBoard){
+        this.callback(this.index);
+    }
+
+    emitImplementation(board: HistBoard){
+        broadcastInRoom(board.roomId, "add_elements", [{ kind: this.kind, index: this.index, element: this.element }], new Set());
+    }
+
+    emitDeimplementation(board: HistBoard){
+        broadcastInRoom(board.roomId, "delete_elements", [[this.kind, this.index]], new Set());
+
+    }
+
+    static addEvent(board: HistBoard, client: Socket){
+        client.on("add_element", (kind: string, data: any, callback: (created_index: number) => void) => { AddElement.handle(board, kind, data, callback)} );
     }
 }

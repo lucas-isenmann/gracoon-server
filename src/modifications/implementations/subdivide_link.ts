@@ -1,6 +1,9 @@
-import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Coord, Graph } from "gramoloss";
+import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Coord } from "gramoloss";
+import { Socket } from "socket.io";
+import { emit_graph_to_room } from "../..";
+import { handleBoardModification } from "../../handler";
+import { HistBoard } from "../../hist_board";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
-
 
 
 
@@ -9,12 +12,14 @@ export class SubdivideLinkModification implements BoardModification {
     newLink1: BasicLink<BasicVertexData, BasicLinkData>;
     newLink2: BasicLink<BasicVertexData, BasicLinkData>;
     oldLink: BasicLink<BasicVertexData, BasicLinkData>;
+    callback: (response: number) => void;
     
-    constructor(newVertex: BasicVertex<BasicVertexData>, newLink1: BasicLink<BasicVertexData, BasicLinkData>, newLink2: BasicLink<BasicVertexData, BasicLinkData>,  oldLink: BasicLink<BasicVertexData, BasicLinkData> ) {
+    constructor(newVertex: BasicVertex<BasicVertexData>, newLink1: BasicLink<BasicVertexData, BasicLinkData>, newLink2: BasicLink<BasicVertexData, BasicLinkData>,  oldLink: BasicLink<BasicVertexData, BasicLinkData>, callback: (response: number) => void ) {
         this.newVertex = newVertex;
         this.newLink1 = newLink1;
         this.newLink2 = newLink2;
         this.oldLink = oldLink;
+        this.callback = callback;
     }
 
     try_implement(board: ServerBoard): Set<SENSIBILITY> | string{
@@ -33,7 +38,7 @@ export class SubdivideLinkModification implements BoardModification {
         return new Set();
     }
 
-    static fromGraph(board: ServerBoard, oldLinkIndex: number, pos: Coord  ): SubdivideLinkModification | undefined{
+    static fromGraph(board: ServerBoard, oldLinkIndex: number, pos: Coord, callback: (response: number) => void  ): SubdivideLinkModification | undefined{
         const oldLink = board.graph.links.get(oldLinkIndex);
         if (typeof oldLink == "undefined"){
             console.log (`Error: cannot create SubdivideLink from graph. ${oldLinkIndex} is not a valid link index.`)
@@ -49,8 +54,31 @@ export class SubdivideLinkModification implements BoardModification {
         const [newLink1Index, newLink2Index] = board.graph.get_next_n_available_link_indices(2);
 
         const newLink1 = new BasicLink(newLink1Index, oldLink.startVertex, newVertex, oldLink.orientation, newLink1Data);
-        const newLink2 = new BasicLink(newLink2Index, newVertex, oldLink.endVertex, oldLink.orientation, newLink1Data);
+        const newLink2 = new BasicLink(newLink2Index, newVertex, oldLink.endVertex, oldLink.orientation, newLink2Data);
         
-        return new SubdivideLinkModification(newVertex, newLink1, newLink2,  oldLink )
+        return new SubdivideLinkModification(newVertex, newLink1, newLink2,  oldLink, callback )
     }
+
+    static handle(board: HistBoard, linkIndex: number, pos: Coord, callback: (response: number) => void){
+        console.log("Handle: subdivide_link");
+        const modif = SubdivideLinkModification.fromGraph(board, linkIndex, pos, callback);
+        handleBoardModification(board, modif);
+    }
+
+    firstEmitImplementation(board: HistBoard){
+        this.callback(this.newVertex.index);
+    }
+
+    emitImplementation(board: HistBoard){
+        emit_graph_to_room(board, new Set());
+    }
+
+    emitDeimplementation(board: HistBoard): void {
+        emit_graph_to_room(board, new Set());
+    }
+
+    static addEvent(board: HistBoard, client: Socket){
+        client.on("subdivide_link", (linkIndex: number, pos: {x: number, y: number}, callback: (response: number) => void) => {SubdivideLinkModification.handle(board, linkIndex, new Coord(pos.x, pos.y), callback)} );
+    }
+
 }

@@ -1,11 +1,13 @@
 import { ServerBoard, BoardModification, SENSIBILITY } from "./modifications/modification";
 
 export class HistBoard extends ServerBoard {
+    roomId: string;
     modifications_stack: Array<BoardModification> = new Array();
     modifications_canceled: Array<BoardModification> = new Array();
 
-    constructor() {
+    constructor(roomId: string) {
         super();
+        this.roomId = roomId;
     }
 
     append_modification_already_implemented(modif: BoardModification){
@@ -19,12 +21,15 @@ export class HistBoard extends ServerBoard {
             console.log("ERROR: try to implement but failed: " , r);
         }else {
             this.modifications_stack.push(modif);
+            console.log(this.modifications_stack.length);
             this.modifications_canceled.length = 0;
         }
         return r;
     }
 
     cancel_last_modification(): BoardModification | string{
+        console.log("cancel last modif");
+        console.log(this.modifications_stack.length);
         const last_modif = this.modifications_stack.pop();
         if (last_modif !== undefined){
             const s = last_modif.deimplement(this);

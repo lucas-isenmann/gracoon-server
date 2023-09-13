@@ -1,4 +1,8 @@
-import {  } from "gramoloss";
+import { Coord } from "gramoloss";
+import { Socket } from "socket.io";
+import { broadcastInRoom } from "../..";
+import { handleBoardModification } from "../../handler";
+import { HistBoard } from "../../hist_board";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 
@@ -151,4 +155,37 @@ export class UpdateElement implements BoardModification {
         }
         return new Set();
     }
+
+    
+
+    static handle(board: HistBoard, kind: string, index: number, param: string, new_value: any) {
+        console.log("Handle: update_element", kind, index, param, new_value);
+        const old_value = board.get_value(kind, index, param);
+        if (param == "cp") {
+            if (new_value.hasOwnProperty('x') && new_value.hasOwnProperty('y')) {
+                new_value = new Coord(new_value.x, new_value.y);
+            } else {
+                new_value = undefined;
+            }
+        }
+        const modif = new UpdateElement(index, kind, param, new_value, old_value)
+        handleBoardModification(board, modif);
+    }
+
+    firstEmitImplementation(board: HistBoard): void{
+    }
+
+    emitImplementation(board: HistBoard): void{
+        broadcastInRoom(board.roomId, "update_element", { index: this.index, kind: this.kind, param: this.param, value: this.new_value }, new Set());
+    }
+
+    emitDeimplementation(board: HistBoard): void{
+        broadcastInRoom(board.roomId, "update_element", { index: this.index, kind: this.kind, param: this.param, value: this.old_value }, new Set());
+    }
+
+
+    static addEvent(board: HistBoard, client: Socket){
+        client.on("update_element", (kind: string, index: number, param: string, newValue: any) => UpdateElement.handle(board, kind, index, param, newValue));
+    }
+
 }

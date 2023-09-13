@@ -1,4 +1,8 @@
-import { Stroke, Area, TextZone, Representation, BasicVertex, BasicLink, BasicVertexData, BasicLinkData } from "gramoloss";
+import { Stroke, Area, TextZone, BasicVertex, BasicLink, BasicVertexData, BasicLinkData } from "gramoloss";
+import { Socket } from "socket.io";
+import { broadcastInRoom } from "../..";
+import { handleBoardModification } from "../../handler";
+import { HistBoard } from "../../hist_board";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 /**
@@ -97,5 +101,60 @@ export class DeleteElements implements BoardModification {
             board.text_zones.set(index, text_zone);
         }
         return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
+    }
+
+    static handle(board: HistBoard, indices: Array<[string, number]>): void{
+        console.log("Handle: delete_elements", indices);
+        const modif = DeleteElements.fromBoard(board, indices);
+        handleBoardModification(board, modif);
+    }
+
+    firstEmitImplementation(board: HistBoard): void{
+    }
+
+    emitImplementation(board: HistBoard): void{
+        const indices= new Array<[string, number]>();
+        for (const vertexId of this.vertices.keys()){
+            indices.push(["Vertex", vertexId])
+        }
+        for (const linkId of this.links.keys()){
+            indices.push(["Link", linkId])
+        }
+        for (const strokeId of this.strokes.keys()){
+            indices.push(["Stroke", strokeId])
+        }
+        for (const areaId of this.areas.keys()){
+            indices.push(["Area", areaId])
+        }
+        for (const id of this.text_zones.keys()){
+            indices.push(["TextZone", id])
+        }
+
+        broadcastInRoom(board.roomId, "delete_elements", indices, new Set());
+    }
+
+    emitDeimplementation(board: HistBoard): void {
+        const removed = new Array();
+        for (const [index, vertex] of this.vertices.entries()) {
+            removed.push({ kind: "Vertex", index: index, element: vertex });
+        }
+        for (const [index, link] of this.links.entries()) {
+            removed.push({ kind: "Link", index: index, element: link });
+        }
+        for (const [index, area] of this.areas.entries()) {
+            removed.push({ kind: "Area", index: index, element: area });
+        }
+        for (const [index, stroke] of this.strokes.entries()) {
+            removed.push({ kind: "Stroke", index: index, element: stroke });
+        }
+        for (const [index, text_zone] of this.text_zones.entries()) {
+            removed.push({ kind: "TextZone", index: index, element: text_zone });
+        }
+        broadcastInRoom(board.roomId, "add_elements", removed, new Set());
+    }
+
+    static addEvent(board: HistBoard, client: Socket){
+        client.on("delete_elements", (indices: Array<[string, number]>) => { DeleteElements.handle(board, indices)});
+
     }
 }

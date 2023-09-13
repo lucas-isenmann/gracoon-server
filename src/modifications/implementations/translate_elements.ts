@@ -1,4 +1,9 @@
 import { Vect } from "gramoloss";
+import { Socket } from "socket.io";
+import { broadcastInRoom } from "../..";
+import { handleBoardModification } from "../../handler";
+import { HistBoard } from "../../hist_board";
+import { eq_indices } from "../../utils";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 export class TranslateElements implements BoardModification {
@@ -82,5 +87,51 @@ export class TranslateElements implements BoardModification {
             }
         }
         return new Set();
+    }
+
+
+    static handle(board: HistBoard, indices: Array<[string, number]>, rawShift: {x: number, y: number}) {
+        // console.log("Handle: translate_elements", indices, rawShift);
+        if ( !rawShift.hasOwnProperty('x') || !rawShift.hasOwnProperty('y')){
+            console.log(`Error: cannot handle because give shift has no x or y property.`)
+            return;
+        }
+        const shift = new Vect(rawShift.x, rawShift.y);
+
+        if (board.modifications_stack.length > 0) {
+            const last_modif = board.modifications_stack[board.modifications_stack.length - 1];
+            if (last_modif.constructor == TranslateElements) {
+                const last_modif2 = last_modif as TranslateElements;
+                if (eq_indices(last_modif2.indices, indices)) {
+                    shift.translate(last_modif2.shift);
+                    last_modif2.deimplement(board);
+                    board.modifications_stack.pop();
+                }
+            }
+        }
+        const modif = new TranslateElements(indices, shift);
+        const r = board.try_push_new_modification(modif);
+        if (typeof r === "string") {
+            console.log(r);
+        } else {
+            broadcastInRoom(board.roomId, "translate_elements", { indices: modif.indices, shift: rawShift }, new Set());
+        }
+
+    }
+
+    firstEmitImplementation(board: HistBoard): void{
+    }
+
+    emitImplementation(board: HistBoard): void{
+        broadcastInRoom(board.roomId, "translate_elements", { indices: this.indices, shift: this.shift }, new Set());
+    }
+
+    emitDeimplementation(board: HistBoard): void {
+        broadcastInRoom(board.roomId, "translate_elements", { indices: this.indices, shift: this.shift.opposite() }, new Set());
+    }
+
+    static addEvent(board: HistBoard, client: Socket){
+        client.on("translate_elements", (indices: Array<[string, number]>, rawShift: {x: number, y: number}) => TranslateElements.handle(board, indices, rawShift));
+
     }
 }
