@@ -50,32 +50,32 @@ export function broadcastInRoom(roomId: string, name: string, data: any, s: Set<
 }
 
 
-io.sockets.on('connection', function (client: Socket) {
+io.sockets.on('connection', function (socket: Socket) {
 
     // Initialization
-    console.log("connection from ", client.id);
-    const client2 = new Client(client, getRandomColor());
-    client.emit('myId', client.id, client2.label, client2.color, Date.now());
-    client.emit("server-version", PACKAGE.version);
-    client.join(client2.board.roomId);
+    console.log("connection from ", socket.id);
+    const client2 = new Client(socket, getRandomColor());
+    socket.emit('myId', socket.id, client2.label, client2.color, Date.now());
+    socket.emit("server-version", PACKAGE.version);
+    socket.join(client2.board.roomId);
     
 
 
 
     // SETUP NON GRAPH ACTIONS
-    client.on("moving_cursor", handleUpdateUser);
-    client.on("disconnect", handleDisconnect);
-    client.on("change_room_to", handleChangeRoomTo);
-    client.on("get_room_id", (callback) => { callback(handleGetRoomId()) });
-    client.on("update_self_user", handle_update_self_user);
-    client.on("follow", add_follower);
-    client.on("unfollow", remove_follower);
-    client.on("my_view", send_view_to_followers);
+    socket.on("moving_cursor", handleUpdateUser);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("change_room_to", handleChangeRoomTo);
+    socket.on("get_room_id", (callback) => { callback(handleGetRoomId()) });
+    socket.on("update_self_user", handle_update_self_user);
+    socket.on("follow", add_follower);
+    socket.on("unfollow", remove_follower);
+    socket.on("my_view", send_view_to_followers);
 
     function handle_update_self_user(label: string, color: string) {
         client2.color = color;
         client2.label = label;
-        client2.broadcast('update_user', client.id, client2.label, client2.color, 0,0);
+        client2.broadcast('update_user', socket.id, client2.label, client2.color, 0,0);
     }
 
     function handleGetRoomId() {
@@ -93,18 +93,18 @@ io.sockets.on('connection', function (client: Socket) {
         }
         else {
             console.log("asked room does not exist");
-            client.emit("update_room_id", client2.board.roomId);
+            socket.emit("update_room_id", client2.board.roomId);
         }
     }
 
     function handleDisconnect() {
         console.log("Handle: disconnect");
-        client2.broadcast('remove_user', client.id);
+        client2.broadcast('remove_user', socket.id);
     }
 
     function handleUpdateUser(x: number, y: number) {
         // console.log("Handle: update_user ", client.id, x, y)
-        client2.broadcast('update_user', client.id, client2.label, client2.color, x, y);
+        client2.broadcast('update_user', socket.id, client2.label, client2.color, x, y);
     }
 
     function add_follower(id: string) {
@@ -112,7 +112,7 @@ io.sockets.on('connection', function (client: Socket) {
         if (client2.board.clients.has(id)) {
             const user = client2.board.clients.get(id);
             if (typeof user  != "undefined" ){
-                user.followers.push(client.id);
+                user.followers.push(socket.id);
                 io.to(id).emit("send_view");
                 console.log("ADDED!");
             }
@@ -124,7 +124,7 @@ io.sockets.on('connection', function (client: Socket) {
         if (client2.board.clients.has(id)) {
             const user = client2.board.clients.get(id);
             if (typeof user  != "undefined"){
-                const index = user.followers.indexOf(client.id);
+                const index = user.followers.indexOf(socket.id);
                 if (index > -1) {
                     user.followers.splice(index, 1);
                     console.log("REMOVED!");
@@ -136,10 +136,10 @@ io.sockets.on('connection', function (client: Socket) {
 
     function send_view_to_followers(x: number, y: number, zoom: number) {
         // console.log("SEND VIEW TO FOLLOWERS:", x,y,zoom, client.id, users.get(client.id).followers);
-        const user = client2.board.clients.get(client.id);
+        const user = client2.board.clients.get(socket.id);
         if (user  !== undefined){
             for (const user_id of user.followers) {
-                io.to(user_id).emit("view_follower", x, y, zoom, client.id);
+                io.to(user_id).emit("view_follower", x, y, zoom, socket.id);
             }
         }
         
@@ -152,35 +152,35 @@ io.sockets.on('connection', function (client: Socket) {
 
     // Graph Actions
     // GraphPaste.addEvent(board, client);
-    client.on("paste_graph", (verticesEntries: any[], linksEntries: any[]) => {GraphPaste.handle(client2.board, verticesEntries, linksEntries)});
+    socket.on("paste_graph", (verticesEntries: any[], linksEntries: any[]) => {GraphPaste.handle(client2.board, verticesEntries, linksEntries)});
     // MergeVertices.addEvent(board, client);
-    client.on("vertices_merge", (fixedVertexId: number, vertexToRemoveId: number) => MergeVertices.handle(client2.board, fixedVertexId, vertexToRemoveId));
+    socket.on("vertices_merge", (fixedVertexId: number, vertexToRemoveId: number) => MergeVertices.handle(client2.board, fixedVertexId, vertexToRemoveId));
     // ApplyModifyer.addEvent(board, client);
-    client.on("apply_modifyer", (name: string, attributesData: Array<any>) => ApplyModifyer.handle(client2.board, name, attributesData));
+    socket.on("apply_modifyer", (name: string, attributesData: Array<any>) => ApplyModifyer.handle(client2.board, name, attributesData));
     // SubdivideLinkModification.addEvent(board, client);
-    client.on("subdivide_link", (linkIndex: number, pos: {x: number, y: number}, callback: (response: number) => void) => {SubdivideLinkModification.handle(client2.board, linkIndex, new Coord(pos.x, pos.y), callback)} );
+    socket.on("subdivide_link", (linkIndex: number, pos: {x: number, y: number}, callback: (response: number) => void) => {SubdivideLinkModification.handle(client2.board, linkIndex, new Coord(pos.x, pos.y), callback)} );
 
 
     // Board Generic
     // ResizeElement.addEvent(board, client);
-    client.on("resize_element", ( kind: string, index: number, x: number, y: number, rawResizeType: string) => ResizeElement.handle(client2.board, kind, index, x, y, rawResizeType));
+    socket.on("resize_element", ( kind: string, index: number, x: number, y: number, rawResizeType: string) => ResizeElement.handle(client2.board, kind, index, x, y, rawResizeType));
     // UpdateElement.addEvent(board, client);
-    client.on("update_element", (kind: string, index: number, param: string, newValue: any) => UpdateElement.handle(client2.board, kind, index, param, newValue));
+    socket.on("update_element", (kind: string, index: number, param: string, newValue: any) => UpdateElement.handle(client2.board, kind, index, param, newValue));
     // AddElement.addEvent(board, client);
-    client.on("add_element", (kind: string, data: any, callback: (created_index: number) => void) => { AddElement.handle(client2.board, kind, data, callback)} );
+    socket.on("add_element", (kind: string, data: any, callback: (created_index: number) => void) => { AddElement.handle(client2.board, kind, data, callback)} );
     // TranslateElements.addEvent(board, client);
-    client.on("translate_elements", (indices: Array<[string, number]>, rawShift: {x: number, y: number}) => TranslateElements.handle(client2.board, indices, rawShift));
+    socket.on("translate_elements", (indices: Array<[string, number]>, rawShift: {x: number, y: number}) => TranslateElements.handle(client2.board, indices, rawShift));
     // DeleteElements.addEvent(board, client);
-    client.on("delete_elements", (indices: Array<[string, number]>) => { DeleteElements.handle(client2.board, indices)});
+    socket.on("delete_elements", (indices: Array<[string, number]>) => { DeleteElements.handle(client2.board, indices)});
 
     // translate_elements // ne regarde pas écraser la dernière modif // TODO
     
     // Not Elementary Actions
-    client.on("undo", handleUndo);
-    client.on("redo", handleRedo);
-    client.on("load_json", handle_load_json); // TODO undoable
+    socket.on("undo", handleUndo);
+    socket.on("redo", handleRedo);
+    socket.on("load_json", handle_load_json); // TODO undoable
     // No modification on the graph
-    client.on("get_json", handle_get_json);
+    socket.on("get_json", handle_get_json);
 
     // ------------------------
 
