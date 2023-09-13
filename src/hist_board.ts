@@ -1,12 +1,16 @@
+import { io } from ".";
 import { ServerBoard, BoardModification, SENSIBILITY } from "./modifications/modification";
+import { Client } from "./user";
 
 export class HistBoard extends ServerBoard {
+    clients: Map<string, Client>;
     roomId: string;
     modifications_stack: Array<BoardModification> = new Array();
     modifications_canceled: Array<BoardModification> = new Array();
 
     constructor(roomId: string) {
         super();
+        this.clients = new Map();
         this.roomId = roomId;
     }
 
@@ -21,15 +25,12 @@ export class HistBoard extends ServerBoard {
             console.log("ERROR: try to implement but failed: " , r);
         }else {
             this.modifications_stack.push(modif);
-            console.log(this.modifications_stack.length);
             this.modifications_canceled.length = 0;
         }
         return r;
     }
 
     cancel_last_modification(): BoardModification | string{
-        console.log("cancel last modif");
-        console.log(this.modifications_stack.length);
         const last_modif = this.modifications_stack.pop();
         if (last_modif !== undefined){
             const s = last_modif.deimplement(this);
@@ -53,4 +54,13 @@ export class HistBoard extends ServerBoard {
         return "REMARK: no canceled modifcation to redo";
     }
     
+    broadcast(ev: string, ...args: any[]){
+        io.sockets.in(this.roomId).emit(ev, ...args);
+    }
+
+    broadcastItsClients() {
+        for (const client of this.clients.values()){
+            this.broadcast('update_user', client.socket.id, client.label, client.color, 0,0)
+        }
+    }
 }

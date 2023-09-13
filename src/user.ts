@@ -1,29 +1,59 @@
-export class User {
+import { Socket } from "socket.io";
+import { boards } from ".";
+import { HistBoard } from "./hist_board";
+import { SENSIBILITY } from "./modifications/modification";
+import { makeid } from "./utils";
+
+export class Client {
+    socket: Socket;
+    board: HistBoard;
     label: string;
-    id: string;
     color: string;
     followers: Array<string>;
 
-    constructor(id: string, color: string) {
-        this.id = id;
-        this.label = id.substring(0, 5)
+    constructor(socket: Socket, color: string){
+        this.socket = socket;
+        this.label = socket.id.substring(0, 5)
         this.color = color;
         this.followers = new Array<string>();
+
+        const roomId = makeid(5);
+        socket.join(roomId);
+        socket.emit('room_id', roomId); // useless ? TODO remove
+        console.log("new room : ", roomId);
+        const board = new HistBoard(roomId);
+        boards.set(roomId, board);
+        
+        this.board = board;
+        board.clients.set(this.socket.id, this);
+        this.emitBoard();
+        board.broadcastItsClients();
+    }
+
+    joinBoard(board: HistBoard){
+        this.board.clients.delete(this.socket.id);
+
+        this.socket.join(board.roomId);
+        this.board = board;
+        board.clients.set(this.socket.id, this);
+        this.emitBoard();
+        board.broadcastItsClients();
+    }
+
+
+    emitBoard(){
+        const s = new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC]);
+        this.socket.emit('graph', [...this.board.graph.vertices.entries()], [...this.board.graph.links.entries()], [...s]);
+        this.socket.emit("reset_board", [...this.board.text_zones.entries()]);
+        this.socket.emit('strokes', [...this.board.strokes.entries()]);
+        this.socket.emit('areas', [...this.board.areas.entries()]);
+    }
+
+    /**
+     * Emit a message to all the clients of the same room of this client but not to this client.
+     */
+    broadcast(ev: string, ...args: any[]){
+        this.socket.to(this.board.roomId).emit(ev, ...args);
     }
 }
 
-export const users = new Map<string, User>();
-
-// TO REMOVE
-export function getRandomColor() {
-    const h = 360 * Math.random();
-    const s = (20 + 80 * Math.random())
-    const l = (35 + 50 * Math.random()) / 100;
-    const a = s * Math.min(l, 1 - l) / 100;
-    const f = (n: number) => {
-        const k = (n + h / 30) % 12;
-        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-        return Math.round(255 * color).toString(16).padStart(2, '0');   // convert to Hex and prefix "0" if needed
-    };
-    return `#${f(0)}${f(8)}${f(4)}`;
-}
