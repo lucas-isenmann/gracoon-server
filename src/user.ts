@@ -4,6 +4,7 @@ import { HistBoard } from "./hist_board";
 import { SENSIBILITY } from "./modifications/modification";
 import { makeid } from "./utils";
 import PACKAGE from '../package.json';
+import { Coord } from "gramoloss";
 
 export class Client {
     socket: Socket;
@@ -11,12 +12,14 @@ export class Client {
     label: string;
     color: string;
     followers: Array<string>;
+    pos: Coord | undefined;
 
     constructor(socket: Socket, color: string){
         this.socket = socket;
         this.label = socket.id.substring(0, 5)
         this.color = color;
         this.followers = new Array<string>();
+        this.pos = undefined;
 
         const roomId = makeid(5);
         socket.join(roomId);
@@ -57,7 +60,7 @@ export class Client {
     /**
      * Emit a message to all the clients of the same room of this client but not to this client.
      */
-    broadcast(ev: string, ...args: any[]){
+    broadcastToOthers(ev: string, ...args: any[]){
         this.socket.to(this.board.roomId).emit(ev, ...args);
     }
 }

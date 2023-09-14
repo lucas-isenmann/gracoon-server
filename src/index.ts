@@ -70,7 +70,7 @@ io.sockets.on('connection', function (socket: Socket) {
     function handleUpdateSelfUser(label: string, color: string) {
         client.color = color;
         client.label = label;
-        client.broadcast('update_user', socket.id, client.label, client.color, 0,0);
+        client.broadcastToOthers('update_user', socket.id, client.label, client.color, client.pos);
     }
 
     function handleGetRoomId() {
@@ -94,13 +94,14 @@ io.sockets.on('connection', function (socket: Socket) {
 
     function handleDisconnect() {
         console.log("Handle: disconnect");
-        client.broadcast('remove_user', socket.id);
+        client.broadcastToOthers('remove_user', socket.id);
         client.board.removeClient(socket.id);
     }
 
     function handleUpdateUser(x: number, y: number) {
-        // console.log("Handle: update_user ", client.id, x, y)
-        client.broadcast('update_user', socket.id, client.label, client.color, x, y);
+        client.pos = new Coord(x,y);
+        // console.log("Handle: update_user ", client.label, client.pos);
+        client.broadcastToOthers('update_user', socket.id, client.label, client.color, client.pos);
     }
 
     function addFollower(id: string) {

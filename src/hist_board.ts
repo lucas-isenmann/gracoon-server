@@ -55,7 +55,7 @@ export class HistBoard extends ServerBoard {
 
     broadcastItsClients() {
         for (const client of this.clients.values()){
-            this.broadcast('update_user', client.socket.id, client.label, client.color, 0,0)
+            this.broadcast('update_user', client.socket.id, client.label, client.color, client.pos);
         }
     }
 

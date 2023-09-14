@@ -3,7 +3,7 @@
 ## Features 
 
 - [ ] add elements: when creating a vertex or a link or ... data should include colors and cp and weights ...
-- [ ] add coord | undefined for the position of a user
+- [ ] when the user goes out of the window, set pos to undefined and broadcast
 
 ## Refacto
 
@@ -20,6 +20,7 @@
 
 ## Done
 
+- [X] add coord | undefined for the position of a user
 - [X] merge: control points disapear after meerge
 - [X] only use boards, not graph
 - [X] upgrade gramoloss to 1.6.0
