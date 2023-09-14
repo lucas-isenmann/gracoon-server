@@ -1,8 +1,8 @@
 import { eqSet, BasicVertex, BasicVertexData, BasicLinkData, BasicLink } from "gramoloss";
-import { Socket } from "socket.io";
 import { emit_graph_to_room } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
+import { Client } from "../../user";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 /**
@@ -118,7 +118,7 @@ export class MergeVertices implements BoardModification {
 
     static handle(board: HistBoard, fixedVertexId: number, vertexToRemoveId: number) {
         console.log(`Handle: vertices_merge: fixed: ${fixedVertexId} toRemove: ${vertexToRemoveId}`);
-        board.cancel_last_modification(); // TODO its not necessarily the last which is a translate
+        board.handleUndo(); // TODO its not necessarily the last which is a translate
         // if Merge is impossible do not cancel last modification
         const modif = MergeVertices.fromBoard(board,  fixedVertexId, vertexToRemoveId);
         handleBoardModification(board, modif);
@@ -135,7 +135,7 @@ export class MergeVertices implements BoardModification {
         emit_graph_to_room(board, new Set());
     }
 
-    static addEvent(board: HistBoard, client: Socket){
-        client.on("vertices_merge", (fixedVertexId: number, vertexToRemoveId: number) => MergeVertices.handle(board, fixedVertexId, vertexToRemoveId));
+    static addEvent(client: Client){
+        client.socket.on("vertices_merge", (fixedVertexId: number, vertexToRemoveId: number) => MergeVertices.handle(client.board, fixedVertexId, vertexToRemoveId));
     }
 }

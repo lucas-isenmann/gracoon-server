@@ -1,7 +1,7 @@
 import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Link, ORIENTATION, Vertex } from "gramoloss";
-import { Socket } from "socket.io";
 import { emit_graph_to_room } from "../..";
 import { HistBoard } from "../../hist_board";
+import { Client } from "../../user";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 export class ApplyModifyer implements BoardModification {
@@ -43,16 +43,16 @@ export class ApplyModifyer implements BoardModification {
 
     static handle(board: HistBoard, name: string, attributesData: Array<any>) {
         console.log(`Handle: apply modifyer: ${name}`);
-        const oldVertices = new Map();
-        const oldLinks = new Map();
+        const oldVertices = new Map<number, BasicVertex<BasicVertexData>>();
+        const oldLinks = new Map<number, BasicLink<BasicVertexData, BasicLinkData>>();
         for (const [index, vertex] of board.graph.vertices.entries()) {
             const oldVertexData = new BasicVertexData(vertex.data.pos, vertex.data.weight, vertex.data.color);
-            const oldVertex = new Vertex(index, oldVertexData);
+            const oldVertex = new BasicVertex(index, oldVertexData);
             oldVertices.set(index, oldVertex);
         }
         for (const [index, link] of board.graph.links.entries()) {
             const oldLinkData = new BasicLinkData(link.data.cp, link.data.weight, link.data.color);
-            const oldLink = new Link(index, link.startVertex, link.endVertex, link.orientation, oldLinkData);
+            const oldLink = new BasicLink(index, link.startVertex, link.endVertex, link.orientation, oldLinkData);
             oldLinks.set(index, oldLink);
         }
 
@@ -106,11 +106,11 @@ export class ApplyModifyer implements BoardModification {
             }
         }
 
-        const new_vertices = new Map();
-        const new_links = new Map();
+        const new_vertices = new Map<number, BasicVertex<BasicVertexData>>();
+        const new_links = new Map<number, BasicLink<BasicVertexData, BasicLinkData>>();
         for (const [index, vertex] of board.graph.vertices.entries()) {
             const newVertexData = new BasicVertexData(vertex.data.pos.copy(), vertex.data.weight, vertex.data.color);
-            const newVertex = new Vertex(index, newVertexData);
+            const newVertex = new BasicVertex(index, newVertexData);
             new_vertices.set(index, newVertex);
         }
         for (const [index, link] of board.graph.links.entries()) {
@@ -118,7 +118,7 @@ export class ApplyModifyer implements BoardModification {
             if (typeof link.data.cp != "undefined" ){
                 newLinkData.cp = link.data.cp.copy();
             }
-            const newLink = new Link(index, link.startVertex, link.endVertex, link.orientation, newLinkData);
+            const newLink = new BasicLink(index, link.startVertex, link.endVertex, link.orientation, newLinkData);
             new_links.set(index, newLink);
         }
 
@@ -138,7 +138,7 @@ export class ApplyModifyer implements BoardModification {
         emit_graph_to_room(board, new Set());
     }
 
-    static addEvent(board: HistBoard, client: Socket){
-        client.on("apply_modifyer", (name: string, attributesData: Array<any>) => ApplyModifyer.handle(board, name, attributesData));
+    static addEvent(client: Client){
+        client.socket.on("apply_modifyer", (name: string, attributesData: Array<any>) => ApplyModifyer.handle(client.board, name, attributesData));
     }
 }

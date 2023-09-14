@@ -1,8 +1,8 @@
 import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Coord, ORIENTATION } from "gramoloss";
-import { Socket } from "socket.io";
 import { broadcastInRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
+import { Client } from "../../user";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 export class GraphPaste implements BoardModification {
@@ -116,7 +116,7 @@ export class GraphPaste implements BoardModification {
     }
 
 
-    static addEvent(board: HistBoard, client: Socket){
-        client.on("paste_graph", (verticesEntries: any[], linksEntries: any[]) => {GraphPaste.handle(board, verticesEntries, linksEntries)});
+    static addEvent(client: Client){
+        client.socket.on("paste_graph", (verticesEntries: any[], linksEntries: any[]) => {GraphPaste.handle(client.board, verticesEntries, linksEntries)});
     }
 }

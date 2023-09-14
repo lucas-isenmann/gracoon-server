@@ -1,8 +1,8 @@
 import { Area, Coord, Rectangle, Representation } from "gramoloss";
-import { Socket } from "socket.io";
 import { broadcastInRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
+import { Client } from "../../user";
 import { BoardModification, RESIZE_TYPE, SENSIBILITY, ServerBoard } from "../modification";
 
 export class ResizeElement implements BoardModification {
@@ -133,7 +133,7 @@ export class ResizeElement implements BoardModification {
         broadcastInRoom(board.roomId, "update_element", { index: this.index, kind: this.kind, param: "c2", value: this.previous_c2 }, new Set());
     }
 
-    static addEvent(board: HistBoard, client: Socket){
-        client.on("resize_element", ( kind: string, index: number, x: number, y: number, rawResizeType: string) => ResizeElement.handle(board, kind, index, x, y, rawResizeType));
+    static addEvent(client: Client){
+        client.socket.on("resize_element", ( kind: string, index: number, x: number, y: number, rawResizeType: string) => ResizeElement.handle(client.board, kind, index, x, y, rawResizeType));
     }
 }

@@ -1,8 +1,7 @@
 import { Vect } from "gramoloss";
-import { Socket } from "socket.io";
 import { broadcastInRoom } from "../..";
-import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
+import { Client } from "../../user";
 import { eq_indices } from "../../utils";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
@@ -130,8 +129,8 @@ export class TranslateElements implements BoardModification {
         broadcastInRoom(board.roomId, "translate_elements", { indices: this.indices, shift: this.shift.opposite() }, new Set());
     }
 
-    static addEvent(board: HistBoard, client: Socket){
-        client.on("translate_elements", (indices: Array<[string, number]>, rawShift: {x: number, y: number}) => TranslateElements.handle(board, indices, rawShift));
+    static addEvent(client: Client){
+        client.socket.on("translate_elements", (indices: Array<[string, number]>, rawShift: {x: number, y: number}) => TranslateElements.handle(client.board, indices, rawShift));
 
     }
 }

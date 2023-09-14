@@ -1,8 +1,8 @@
 import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Coord } from "gramoloss";
-import { Socket } from "socket.io";
 import { emit_graph_to_room } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
+import { Client } from "../../user";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 
@@ -77,8 +77,8 @@ export class SubdivideLinkModification implements BoardModification {
         emit_graph_to_room(board, new Set());
     }
 
-    static addEvent(board: HistBoard, client: Socket){
-        client.on("subdivide_link", (linkIndex: number, pos: {x: number, y: number}, callback: (response: number) => void) => {SubdivideLinkModification.handle(board, linkIndex, new Coord(pos.x, pos.y), callback)} );
+    static addEvent(client: Client){
+        client.socket.on("subdivide_link", (linkIndex: number, pos: {x: number, y: number}, callback: (response: number) => void) => {SubdivideLinkModification.handle(client.board, linkIndex, new Coord(pos.x, pos.y), callback)} );
     }
 
 }

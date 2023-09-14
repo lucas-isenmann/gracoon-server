@@ -30,15 +30,6 @@ export class HistBoard extends ServerBoard {
         return r;
     }
 
-    cancel_last_modification(): BoardModification | string{
-        const last_modif = this.modifications_stack.pop();
-        if (last_modif !== undefined){
-            const s = last_modif.deimplement(this);
-            this.modifications_canceled.push(last_modif);
-            return last_modif;
-        } 
-        return "no modification in stack";
-    }
 
     redo(): BoardModification | string {
         const modif = this.modifications_canceled.pop();
@@ -61,6 +52,30 @@ export class HistBoard extends ServerBoard {
     broadcastItsClients() {
         for (const client of this.clients.values()){
             this.broadcast('update_user', client.socket.id, client.label, client.color, 0,0)
+        }
+    }
+
+
+    handleUndo() {
+        console.log("Handle: undo");
+        const modif = this.modifications_stack.pop();
+        if (modif !== undefined){
+            const s = modif.deimplement(this);
+            this.modifications_canceled.push(modif);
+            modif.emitDeimplementation(this);
+        } else {
+            console.log(`Remark: no modification in stack`)
+        }
+    }
+
+
+    handleRedo() {
+        console.log("Handle: redo");
+        const modif = this.redo();
+        if (typeof modif === "string") {
+            console.log(modif);
+        } else {
+            modif.emitImplementation(this);
         }
     }
 }

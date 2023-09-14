@@ -3,6 +3,7 @@ import { boards } from ".";
 import { HistBoard } from "./hist_board";
 import { SENSIBILITY } from "./modifications/modification";
 import { makeid } from "./utils";
+import PACKAGE from '../package.json';
 
 export class Client {
     socket: Socket;
@@ -28,6 +29,10 @@ export class Client {
         board.clients.set(this.socket.id, this);
         this.emitBoard();
         board.broadcastItsClients();
+
+        socket.emit('myId', socket.id, this.label, this.color, Date.now());
+        socket.emit("server-version", PACKAGE.version);
+        socket.join(roomId);
     }
 
     joinBoard(board: HistBoard){

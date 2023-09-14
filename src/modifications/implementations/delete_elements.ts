@@ -1,8 +1,8 @@
 import { Stroke, Area, TextZone, BasicVertex, BasicLink, BasicVertexData, BasicLinkData } from "gramoloss";
-import { Socket } from "socket.io";
 import { broadcastInRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
+import { Client } from "../../user";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 /**
@@ -153,8 +153,8 @@ export class DeleteElements implements BoardModification {
         broadcastInRoom(board.roomId, "add_elements", removed, new Set());
     }
 
-    static addEvent(board: HistBoard, client: Socket){
-        client.on("delete_elements", (indices: Array<[string, number]>) => { DeleteElements.handle(board, indices)});
+    static addEvent(client: Client){
+        client.socket.on("delete_elements", (indices: Array<[string, number]>) => { DeleteElements.handle(client.board, indices)});
 
     }
 }

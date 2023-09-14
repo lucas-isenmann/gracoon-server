@@ -1,8 +1,8 @@
 import { Stroke, Area, TextZone, BasicVertexData, BasicLinkData, BasicVertex, BasicLink, Coord, ORIENTATION } from "gramoloss";
-import { Socket } from "socket.io";
 import { broadcastInRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
+import { Client } from "../../user";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 /**
@@ -157,7 +157,7 @@ export class AddElement implements BoardModification {
 
     }
 
-    static addEvent(board: HistBoard, client: Socket){
-        client.on("add_element", (kind: string, data: any, callback: (created_index: number) => void) => { AddElement.handle(board, kind, data, callback)} );
+    static addEvent(client: Client){
+        client.socket.on("add_element", (kind: string, data: any, callback: (created_index: number) => void) => { AddElement.handle(client.board, kind, data, callback)} );
     }
 }

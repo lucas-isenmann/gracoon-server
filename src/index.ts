@@ -14,7 +14,7 @@ import { getRandomColor } from './utils';
 
 import { Server, Socket } from 'socket.io';
 import { SubdivideLinkModification } from "./modifications/implementations/subdivide_link";
-import PACKAGE from '../package.json';
+
 import { Client } from "./user";
 
 // Initialize the server
@@ -55,9 +55,7 @@ io.sockets.on('connection', function (socket: Socket) {
     // Initialization
     console.log("connection from ", socket.id);
     const client = new Client(socket, getRandomColor());
-    socket.emit('myId', socket.id, client.label, client.color, Date.now());
-    socket.emit("server-version", PACKAGE.version);
-    socket.join(client.board.roomId);
+    
     
 
 
@@ -151,60 +149,28 @@ io.sockets.on('connection', function (socket: Socket) {
     // ------------------------
 
     // Graph Actions
-    // GraphPaste.addEvent(board, client);
-    socket.on("paste_graph", (verticesEntries: any[], linksEntries: any[]) => {GraphPaste.handle(client.board, verticesEntries, linksEntries)});
-    // MergeVertices.addEvent(board, client);
-    socket.on("vertices_merge", (fixedVertexId: number, vertexToRemoveId: number) => MergeVertices.handle(client.board, fixedVertexId, vertexToRemoveId));
-    // ApplyModifyer.addEvent(board, client);
-    socket.on("apply_modifyer", (name: string, attributesData: Array<any>) => ApplyModifyer.handle(client.board, name, attributesData));
-    // SubdivideLinkModification.addEvent(board, client);
-    socket.on("subdivide_link", (linkIndex: number, pos: {x: number, y: number}, callback: (response: number) => void) => {SubdivideLinkModification.handle(client.board, linkIndex, new Coord(pos.x, pos.y), callback)} );
-
+    GraphPaste.addEvent(client);
+    MergeVertices.addEvent(client);
+    ApplyModifyer.addEvent(client);
+    SubdivideLinkModification.addEvent(client);
 
     // Board Generic
-    // ResizeElement.addEvent(board, client);
-    socket.on("resize_element", ( kind: string, index: number, x: number, y: number, rawResizeType: string) => ResizeElement.handle(client.board, kind, index, x, y, rawResizeType));
-    // UpdateElement.addEvent(board, client);
-    socket.on("update_element", (kind: string, index: number, param: string, newValue: any) => UpdateElement.handle(client.board, kind, index, param, newValue));
-    // AddElement.addEvent(board, client);
-    socket.on("add_element", (kind: string, data: any, callback: (created_index: number) => void) => { AddElement.handle(client.board, kind, data, callback)} );
-    // TranslateElements.addEvent(board, client);
-    socket.on("translate_elements", (indices: Array<[string, number]>, rawShift: {x: number, y: number}) => TranslateElements.handle(client.board, indices, rawShift));
-    // DeleteElements.addEvent(board, client);
-    socket.on("delete_elements", (indices: Array<[string, number]>) => { DeleteElements.handle(client.board, indices)});
+    ResizeElement.addEvent(client);
+    UpdateElement.addEvent(client);
+    AddElement.addEvent(client);
+    TranslateElements.addEvent(client);
+    DeleteElements.addEvent(client);
 
     // translate_elements // ne regarde pas écraser la dernière modif // TODO
     
     // Not Elementary Actions
-    socket.on("undo", handleUndo);
-    socket.on("redo", handleRedo);
+    socket.on("undo", () => client.board.handleUndo());
+    socket.on("redo", () => client.board.handleRedo());
     socket.on("load_json", handle_load_json); // TODO undoable
     // No modification on the graph
     socket.on("get_json", handle_get_json);
 
     // ------------------------
-
-    function handleUndo() {
-        console.log("Handle: undo");
-        const modif = client.board.cancel_last_modification();
-        if (typeof modif === "string") {
-            console.log(modif);
-        } else {
-            modif.emitDeimplementation(client.board);
-        }
-    }
-
-    function handleRedo() {
-        console.log("Handle: redo");
-        const modif = client.board.redo();
-        if (typeof modif === "string") {
-            console.log(modif);
-        } else {
-            modif.emitImplementation(client.board);
-        }
-    }
-
-
 
     // JSON
     function handle_load_json(s: string) {

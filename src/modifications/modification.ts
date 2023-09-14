@@ -1,5 +1,6 @@
 import { Board, Stroke, Area, TextZone, Representation, Rectangle, BasicVertexData, BasicLinkData } from "gramoloss";
 import { HistBoard } from "../hist_board";
+import { Client } from "../user";
 
 export enum SENSIBILITY {
     GEOMETRIC = "GEOMETRIC", // Move of vertex/link
