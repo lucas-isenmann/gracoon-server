@@ -1,5 +1,5 @@
 import { eqSet, BasicVertex, BasicVertexData, BasicLinkData, BasicLink } from "gramoloss";
-import { emit_graph_to_room } from "../..";
+import { emitGraphToRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
 import { Client } from "../../user";
@@ -128,11 +128,11 @@ export class MergeVertices implements BoardModification {
     }
 
     emitImplementation(board: HistBoard): void{
-        emit_graph_to_room(board, new Set())
+        emitGraphToRoom(board, new Set())
     }
 
     emitDeimplementation(board: HistBoard): void {
-        emit_graph_to_room(board, new Set());
+        emitGraphToRoom(board, new Set());
     }
 
     static addEvent(client: Client){

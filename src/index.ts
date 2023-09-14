@@ -41,7 +41,7 @@ export const boards = new Map<string, HistBoard>();
 
 
 
-export function emit_graph_to_room(board: HistBoard, s: Set<SENSIBILITY>) {
+export function emitGraphToRoom(board: HistBoard, s: Set<SENSIBILITY>) {
     io.sockets.in(board.roomId).emit('graph', [...board.graph.vertices.entries()], [...board.graph.links.entries()], [...s]);
 }
 
@@ -56,21 +56,18 @@ io.sockets.on('connection', function (socket: Socket) {
     console.log("connection from ", socket.id);
     const client = new Client(socket, getRandomColor());
     
-    
-
-
 
     // SETUP NON GRAPH ACTIONS
     socket.on("moving_cursor", handleUpdateUser);
     socket.on("disconnect", handleDisconnect);
     socket.on("change_room_to", handleChangeRoomTo);
     socket.on("get_room_id", (callback) => { callback(handleGetRoomId()) });
-    socket.on("update_self_user", handle_update_self_user);
-    socket.on("follow", add_follower);
-    socket.on("unfollow", remove_follower);
-    socket.on("my_view", send_view_to_followers);
+    socket.on("update_self_user", handleUpdateSelfUser);
+    socket.on("follow", addFollower);
+    socket.on("unfollow", removeFollower);
+    socket.on("my_view", sendViewToFollowers);
 
-    function handle_update_self_user(label: string, color: string) {
+    function handleUpdateSelfUser(label: string, color: string) {
         client.color = color;
         client.label = label;
         client.broadcast('update_user', socket.id, client.label, client.color, 0,0);
@@ -105,7 +102,7 @@ io.sockets.on('connection', function (socket: Socket) {
         client.broadcast('update_user', socket.id, client.label, client.color, x, y);
     }
 
-    function add_follower(id: string) {
+    function addFollower(id: string) {
         console.log("ADDING FOLLOWER...");
         if (client.board.clients.has(id)) {
             const user = client.board.clients.get(id);
@@ -117,7 +114,7 @@ io.sockets.on('connection', function (socket: Socket) {
         }
     }
 
-    function remove_follower(id: string) {
+    function removeFollower(id: string) {
         console.log("REMOVING FOLLOWER...");
         if (client.board.clients.has(id)) {
             const user = client.board.clients.get(id);
@@ -132,12 +129,12 @@ io.sockets.on('connection', function (socket: Socket) {
         }
     }
 
-    function send_view_to_followers(x: number, y: number, zoom: number) {
+    function sendViewToFollowers(x: number, y: number, zoom: number) {
         // console.log("SEND VIEW TO FOLLOWERS:", x,y,zoom, client.id, users.get(client.id).followers);
         const user = client.board.clients.get(socket.id);
         if (user  !== undefined){
-            for (const user_id of user.followers) {
-                io.to(user_id).emit("view_follower", x, y, zoom, socket.id);
+            for (const userId of user.followers) {
+                io.to(userId).emit("view_follower", x, y, zoom, socket.id);
             }
         }
         
@@ -166,14 +163,14 @@ io.sockets.on('connection', function (socket: Socket) {
     // Not Elementary Actions
     socket.on("undo", () => client.board.handleUndo());
     socket.on("redo", () => client.board.handleRedo());
-    socket.on("load_json", handle_load_json); // TODO undoable
+    socket.on("load_json", handleLoadJson); // TODO undoable
     // No modification on the graph
-    socket.on("get_json", handle_get_json);
+    socket.on("get_json", handleGetJson);
 
     // ------------------------
 
     // JSON
-    function handle_load_json(s: string) {
+    function handleLoadJson(s: string) {
         client.board.graph.clear();
 
         const data = JSON.parse(s);
@@ -186,17 +183,17 @@ io.sockets.on('connection', function (socket: Socket) {
             // TODO
             //g.add_link_with_cp(link[1].start_vertex, link[1].end_vertex, link[1].orientation, new Coord(link[1].cp.x, link[1].cp.y))
         }
-        emit_graph_to_room(client.board, new Set([SENSIBILITY.COLOR, SENSIBILITY.ELEMENT, SENSIBILITY.GEOMETRIC]));
+        emitGraphToRoom(client.board, new Set([SENSIBILITY.COLOR, SENSIBILITY.ELEMENT, SENSIBILITY.GEOMETRIC]));
     }
 
 
 
-    function handle_get_json(callback: (arg0: string) => void) {
-        const graph_stringifiable = {
+    function handleGetJson(callback: (arg0: string) => void) {
+        const graphStringiable = {
             vertices: Array.from(client.board.graph.vertices.entries()),
             links: Array.from(client.board.graph.links.entries()),
         }
-        callback(JSON.stringify(graph_stringifiable));
+        callback(JSON.stringify(graphStringiable));
     }
 
 })

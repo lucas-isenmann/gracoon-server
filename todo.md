@@ -3,7 +3,7 @@
 ## Features 
 
 - [ ] add elements: when creating a vertex or a link or ... data should include colors and cp and weights ...
-
+- [ ] add coord | undefined for the position of a user
 
 ## Refacto
 

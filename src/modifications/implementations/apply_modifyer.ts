@@ -1,5 +1,5 @@
 import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Link, ORIENTATION, Vertex } from "gramoloss";
-import { emit_graph_to_room } from "../..";
+import { emitGraphToRoom } from "../..";
 import { HistBoard } from "../../hist_board";
 import { Client } from "../../user";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
@@ -124,18 +124,18 @@ export class ApplyModifyer implements BoardModification {
 
         const modif = new ApplyModifyer(oldVertices, oldLinks, new_vertices, new_links);
         board.append_modification_already_implemented(modif);
-        emit_graph_to_room(board, new Set([SENSIBILITY.ELEMENT]));
+        emitGraphToRoom(board, new Set([SENSIBILITY.ELEMENT]));
     }
 
     firstEmitImplementation(board: HistBoard): void{
     }
 
     emitImplementation(board: HistBoard): void{
-        emit_graph_to_room(board, new Set([SENSIBILITY.ELEMENT]));
+        emitGraphToRoom(board, new Set([SENSIBILITY.ELEMENT]));
     }
 
     emitDeimplementation(board: HistBoard): void {
-        emit_graph_to_room(board, new Set());
+        emitGraphToRoom(board, new Set());
     }
 
     static addEvent(client: Client){
