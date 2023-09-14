@@ -14,6 +14,10 @@ export class HistBoard extends ServerBoard {
         this.roomId = roomId;
     }
 
+    removeClient(clientId: string){
+        this.clients.delete(clientId);
+    }
+
     append_modification_already_implemented(modif: BoardModification){
         this.modifications_stack.push(modif);
         this.modifications_canceled.length = 0;

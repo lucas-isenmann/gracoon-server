@@ -95,6 +95,7 @@ io.sockets.on('connection', function (socket: Socket) {
     function handleDisconnect() {
         console.log("Handle: disconnect");
         client.broadcast('remove_user', socket.id);
+        client.board.removeClient(socket.id);
     }
 
     function handleUpdateUser(x: number, y: number) {
