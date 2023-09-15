@@ -45,7 +45,7 @@ export class GraphPaste implements BoardModification {
         const new_vertex_indices: Array<number> = board.graph.get_next_n_available_vertex_indices(verticesEntries.length);
         let i = 0;
         for (const data of verticesEntries) {
-            const vertexData = new BasicVertexData(new Coord(data[1].data.pos.x, data[1].data.pos.y), "", "black");
+            const vertexData = new BasicVertexData(new Coord(data[1].data.pos.x, data[1].data.pos.y), data[1].data.weight, data[1].data.color);
             const vertex = new BasicVertex(new_vertex_indices[i], vertexData);
             addedVertices.set(vertex.index, vertex);
             vertex_indices_transformation.set(data[1].index, vertex.index);
