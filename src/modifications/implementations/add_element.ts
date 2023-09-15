@@ -108,7 +108,7 @@ export class AddElement implements BoardModification {
         } else if (kind == "Vertex") {
             newIndex = board.graph.get_next_available_index_vertex();
             const pos = new Coord(data.pos.x, data.pos.y);
-            const newVertexData = new BasicVertexData(new Coord(pos.x, pos.y), "", "black");
+            const newVertexData = new BasicVertexData(new Coord(pos.x, pos.y), data.weight, data.color);
             newElement = new BasicVertex(newIndex, newVertexData);
         } else if (kind == "Link") {
             newIndex = board.graph.get_next_available_index_links();
@@ -124,7 +124,7 @@ export class AddElement implements BoardModification {
             const startVertex = board.graph.vertices.get(data.start_index);
             const endVertex = board.graph.vertices.get(data.end_index);
             if (typeof startVertex != "undefined" && typeof endVertex != "undefined"){
-                const newLinkData = new BasicLinkData(undefined, "", "black");
+                const newLinkData = new BasicLinkData(undefined, data.weight, data.color);
                 newElement = new BasicLink(newIndex, startVertex, endVertex, orient, newLinkData );
             } else {
                 console.log(`Error: AddElement.fromBoard: trying to add a link between undefined vertex index ${data.start_index} or ${data.end_index}`);
