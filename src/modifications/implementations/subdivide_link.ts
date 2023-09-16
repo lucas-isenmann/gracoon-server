@@ -38,14 +38,14 @@ export class SubdivideLinkModification implements BoardModification {
         return new Set();
     }
 
-    static fromGraph(board: ServerBoard, oldLinkIndex: number, pos: Coord, callback: (response: number) => void  ): SubdivideLinkModification | undefined{
+    static fromGraph(board: ServerBoard, oldLinkIndex: number, pos: Coord, weight: string, color: string, callback: (response: number) => void  ): SubdivideLinkModification | undefined{
         const oldLink = board.graph.links.get(oldLinkIndex);
         if (typeof oldLink == "undefined"){
             console.log (`Error: cannot create SubdivideLink from graph. ${oldLinkIndex} is not a valid link index.`)
             return undefined;
         }
 
-        const newVertexData = new BasicVertexData( pos, "", "black");
+        const newVertexData = new BasicVertexData( pos, weight, color);
         const newVertexIndex = board.graph.get_next_available_index_vertex();
         const newVertex = new BasicVertex(newVertexIndex, newVertexData);
 
@@ -59,9 +59,9 @@ export class SubdivideLinkModification implements BoardModification {
         return new SubdivideLinkModification(newVertex, newLink1, newLink2,  oldLink, callback )
     }
 
-    static handle(board: HistBoard, linkIndex: number, pos: Coord, callback: (response: number) => void){
+    static handle(board: HistBoard, linkIndex: number, pos: Coord, weight: string, color: string, callback: (response: number) => void){
         console.log("Handle: subdivide_link");
-        const modif = SubdivideLinkModification.fromGraph(board, linkIndex, pos, callback);
+        const modif = SubdivideLinkModification.fromGraph(board, linkIndex, pos, weight, color, callback);
         handleBoardModification(board, modif);
     }
 
@@ -78,7 +78,7 @@ export class SubdivideLinkModification implements BoardModification {
     }
 
     static addEvent(client: Client){
-        client.socket.on("subdivide_link", (linkIndex: number, pos: {x: number, y: number}, callback: (response: number) => void) => {SubdivideLinkModification.handle(client.board, linkIndex, new Coord(pos.x, pos.y), callback)} );
+        client.socket.on("subdivide_link", (linkIndex: number, pos: {x: number, y: number}, weight: string, color: string, callback: (response: number) => void) => {SubdivideLinkModification.handle(client.board, linkIndex, new Coord(pos.x, pos.y), weight, color, callback)} );
     }
 
 }
