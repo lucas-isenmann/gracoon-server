@@ -1,4 +1,4 @@
-import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Link, ORIENTATION, Vertex } from "gramoloss";
+import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Link, Option, ORIENTATION, Vertex } from "gramoloss";
 import { emitGraphToRoom } from "../..";
 import { HistBoard } from "../../hist_board";
 import { Client } from "../../user";
@@ -41,7 +41,7 @@ export class ApplyModifyer implements BoardModification {
         return new Set([SENSIBILITY.ELEMENT])
     }
 
-    static handle(board: HistBoard, name: string, attributesData: Array<any>) {
+    static handle(board: HistBoard, name: string, attributesData: Array<any>, verticesSelection: Option<Array<number>>) {
         console.log(`Handle: apply modifyer: ${name}`);
         const oldVertices = new Map<number, BasicVertex<BasicVertexData>>();
         const oldLinks = new Map<number, BasicLink<BasicVertexData, BasicLinkData>>();
@@ -83,17 +83,29 @@ export class ApplyModifyer implements BoardModification {
                 console.log(`Error: wrong number of attributes: ${attributesData.length} (expected: 2)`);
                 return;
             }
-            const area_index = attributesData[0];
+            const areaIndex = attributesData[0];
             const p = attributesData[1];
             if (typeof p == "number"){
-                if (typeof area_index == "string") {
-                    for (const index of board.graph.links.keys()) {
-                        if (Math.random() < p){
-                            board.graph.links.delete(index);
+                if (typeof areaIndex == "string") {
+                    if (areaIndex == "Everything"){
+                        for (const index of board.graph.links.keys()) {
+                            if (Math.random() < p){
+                                board.graph.links.delete(index);
+                            }
+                        }
+                    } else {
+                        if (typeof verticesSelection != "undefined"){
+                            for (const [index, link] of board.graph.links.entries()) {
+                                if (Math.random() < p && verticesSelection.includes(link.startVertex.index) && verticesSelection.includes(link.endVertex.index)){
+                                    board.graph.links.delete(index);
+                                }
+                            }
+                        } else {
+                            console.log("asked: selection, but no attributes vertices selection given")
                         }
                     }
                 } else {
-                    const area = board.areas.get(area_index);
+                    const area = board.areas.get(areaIndex);
                     if (area  !== undefined){
                         const areaVIndices = board.graph.vertices_contained_by_area(area);
                         for (const [index, link] of board.graph.links.entries()) {
@@ -139,6 +151,6 @@ export class ApplyModifyer implements BoardModification {
     }
 
     static addEvent(client: Client){
-        client.socket.on("apply_modifyer", (name: string, attributesData: Array<any>) => ApplyModifyer.handle(client.board, name, attributesData));
+        client.socket.on("apply_modifyer", (name: string, attributesData: Array<any>, verticesSelection: Option<Array<number>>) => ApplyModifyer.handle(client.board, name, attributesData, verticesSelection));
     }
 }
