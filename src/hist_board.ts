@@ -8,10 +8,13 @@ export class HistBoard extends ServerBoard {
     modifications_stack: Array<BoardModification> = new Array();
     modifications_canceled: Array<BoardModification> = new Array();
 
+    creationDate: string;
+
     constructor(roomId: string) {
         super();
         this.clients = new Map();
         this.roomId = roomId;
+        this.creationDate = (new Date()).toISOString();
     }
 
     removeClient(clientId: string){

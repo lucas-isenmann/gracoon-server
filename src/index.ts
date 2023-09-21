@@ -11,6 +11,7 @@ import { TranslateElements } from './modifications/implementations/translate_ele
 import { UpdateElement } from './modifications/implementations/update_element';
 import { SENSIBILITY } from './modifications/modification';
 import { getRandomColor } from './utils';
+import PACKAGE from '../package.json';
 
 import { Server, Socket } from 'socket.io';
 import { SubdivideLinkModification } from "./modifications/implementations/subdivide_link";
@@ -27,7 +28,11 @@ export const io = new Server({
 });
 
 io.listen(ENV.port);
-console.log('Server started at http://localhost:' + ENV.port);
+
+console.log("----------------------------------------------");
+console.log(`Server started at http://localhost:${ENV.port}`);
+console.log(`version: ${PACKAGE.version}`);
+console.log("----------------------------------------------");
 
 
 /*
@@ -55,8 +60,21 @@ io.sockets.on('connection', function (socket: Socket) {
     // Initialization
     console.log("connection from ", socket.id);
     const client = new Client(socket, getRandomColor());
-    
 
+
+    // ---------------------------------------------------------
+    // Setup General API
+    socket.on("get-public-boards", handleGetPublicRooms);
+
+    function handleGetPublicRooms(){
+        const data = new Array<string>();
+        for (const [id, board] of boards.entries()){
+            data.push( `${id} ${board.creationDate} ${board.modifications_stack.length}` );
+        }
+        socket.emit("get-public-boards", data)
+    }
+    
+    // ---------------------------------------------------------
     // SETUP NON GRAPH ACTIONS
     socket.on("moving_cursor", handleUpdateUser);
     socket.on("disconnect", handleDisconnect);
@@ -143,9 +161,9 @@ io.sockets.on('connection', function (socket: Socket) {
     }
 
 
-    // ------------------------
+    // ------------------------------------------------
     // GRAPH API
-    // ------------------------
+    // ------------------------------------------------
 
     // Graph Actions
     GraphPaste.addEvent(client);
