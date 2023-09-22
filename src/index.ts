@@ -20,6 +20,10 @@ import { SubdivideLinkModification } from "./modifications/implementations/subdi
 import { Client } from "./user";
 import { GenerateGraph } from "./modifications/implementations/generate_graph";
 
+
+console.log( process.env.USER );
+
+
 // Initialize the server
 
 export const io = new Server({
@@ -117,7 +121,7 @@ io.sockets.on('connection', function (socket: Socket) {
         console.log(`Handle: disconnect, client: ${socket.id}`);
         client.broadcastToOthers('remove_user', socket.id);
         client.board.removeClient(socket.id);
-        const filePath = `boards/${client.board.roomId}.json`;
+        const filePath = `${ENV.boardsPath}${client.board.roomId}.json`;
         const fileContent = client.board.toString();
         fs.writeFile(filePath, fileContent, (err) => {
             if (err) {
