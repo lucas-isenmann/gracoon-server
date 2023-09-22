@@ -85,4 +85,17 @@ export class HistBoard extends ServerBoard {
             modif.emitImplementation(this);
         }
     }
+
+    toString(): string{
+        const data = {
+            creationDate: this.creationDate,
+            nbModificationsInStack: this.modifications_stack.length,
+            vertices: Array.from(this.graph.vertices.values()),
+            links: Array.from(this.graph.links.values()),
+            strokes: Array.from(this.strokes.values()),
+            areas: Array.from(this.areas.values()),
+            textZones: Array.from(this.text_zones.values())
+        }
+        return JSON.stringify(data)
+    }
 }

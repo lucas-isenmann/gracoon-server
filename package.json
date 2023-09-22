@@ -18,7 +18,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "gramoloss": "^1.8.1",
+    "gramoloss": "^1.9.4",
     "nodemon": "^2.0.22",
     "socket.io": "^4.6.2",
     "ts-node": "^10.9.1",

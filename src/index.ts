@@ -12,11 +12,13 @@ import { UpdateElement } from './modifications/implementations/update_element';
 import { SENSIBILITY } from './modifications/modification';
 import { getRandomColor } from './utils';
 import PACKAGE from '../package.json';
+import * as fs from 'fs';
 
 import { Server, Socket } from 'socket.io';
 import { SubdivideLinkModification } from "./modifications/implementations/subdivide_link";
 
 import { Client } from "./user";
+import { GenerateGraph } from "./modifications/implementations/generate_graph";
 
 // Initialize the server
 
@@ -59,6 +61,8 @@ io.sockets.on('connection', function (socket: Socket) {
 
     // Initialization
     console.log("connection from ", socket.id);
+    console.log("   user-agent: "+socket.request.headers['user-agent']);
+    console.log("   ", socket.handshake.address)
     const client = new Client(socket, getRandomColor());
 
 
@@ -69,7 +73,7 @@ io.sockets.on('connection', function (socket: Socket) {
     function handleGetPublicRooms(){
         const data = new Array<string>();
         for (const [id, board] of boards.entries()){
-            data.push( `${id} ${board.creationDate} ${board.modifications_stack.length}` );
+            data.push( `${id} ${board.creationDate} ${board.modifications_stack.length} ${board.clients.size}` );
         }
         socket.emit("get-public-boards", data)
     }
@@ -96,11 +100,10 @@ io.sockets.on('connection', function (socket: Socket) {
     }
 
     function handleChangeRoomTo(roomIdAsked: string) {
-        console.log("Handle: change room")
+        console.log(`Handle: change_room, client: ${socket.id}, asked: ${roomIdAsked}`);
         if (boards.has(roomIdAsked)) {
             const board = boards.get(roomIdAsked);
             if (typeof board  !== "undefined"){
-                
                 client.joinBoard(board);
             }
         }
@@ -111,9 +114,18 @@ io.sockets.on('connection', function (socket: Socket) {
     }
 
     function handleDisconnect() {
-        console.log("Handle: disconnect");
+        console.log(`Handle: disconnect, client: ${socket.id}`);
         client.broadcastToOthers('remove_user', socket.id);
         client.board.removeClient(socket.id);
+        const filePath = `boards/${client.board.roomId}.json`;
+        const fileContent = client.board.toString();
+        fs.writeFile(filePath, fileContent, (err) => {
+            if (err) {
+                console.error('An error occurred while saving the file:', err);
+              } else {
+                console.log('File saved successfully');
+              }
+        });
     }
 
     function handleUpdateUser(x: number, y: number) {
@@ -170,6 +182,7 @@ io.sockets.on('connection', function (socket: Socket) {
     MergeVertices.addEvent(client);
     ApplyModifyer.addEvent(client);
     SubdivideLinkModification.addEvent(client);
+    GenerateGraph.addEvent(client);
 
     // Board Generic
     ResizeElement.addEvent(client);

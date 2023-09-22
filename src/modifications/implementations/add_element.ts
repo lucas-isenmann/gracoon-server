@@ -94,17 +94,17 @@ export class AddElement implements BoardModification {
                 const pos = new Coord(e[1].x, e[1].y);
                 positions.push(pos);
             });
-            newElement = new Stroke(positions, data.color, data.width);
+            newElement = new Stroke(positions, data.color, data.width, newIndex);
         } else if (kind == "Area") {
             newIndex = board.get_next_available_index_area();
             const c1 = new Coord(data.c1.x, data.c1.y);
             const c2 = new Coord(data.c2.x, data.c2.y);
-            newElement = new Area(data.label + newIndex, c1, c2, data.color);
+            newElement = new Area(data.label + newIndex, c1, c2, data.color, newIndex);
         }
         else if (kind == "TextZone") {
             newIndex = board.get_next_available_index_text_zone();
             const pos = new Coord(data.pos.x, data.pos.y);
-            newElement = new TextZone(pos, 200, "new text zone");
+            newElement = new TextZone(pos, 200, "new text zone", newIndex);
         } else if (kind == "Vertex") {
             newIndex = board.graph.get_next_available_index_vertex();
             const pos = new Coord(data.pos.x, data.pos.y);
@@ -139,7 +139,7 @@ export class AddElement implements BoardModification {
     }
 
     static handle(board: HistBoard, kind: string, data: any, callback: (created_index: number) => void) {
-        console.log(`Handle: add_element {kind: ${kind}, data: ${JSON.stringify(data)}}`);
+        console.log(`Handle: add_element in ${board.roomId}: ${kind} ${toShortString(kind, data)}`);
         const modif = AddElement.fromBoard(board, kind, data, callback);
         handleBoardModification(board, modif);
     }
@@ -159,5 +159,21 @@ export class AddElement implements BoardModification {
 
     static addEvent(client: Client){
         client.socket.on("add_element", (kind: string, data: any, callback: (created_index: number) => void) => { AddElement.handle(client.board, kind, data, callback)} );
+    }
+}
+
+
+
+
+function toShortString(kind: string, data: any): string{
+    if (kind == "Vertex"){
+        return `${data.pos.x.toFixed(2)} ${data.pos.y.toFixed(2)} ${data.color} ${data.weight}`;
+    } else if (kind == "Link"){
+        return `${data.orientation == "UNDIRECTED" ? "edge": "arc" } ${data.start_index} ${data.end_index} ${data.color} ${data.weight}`;
+    } else if (kind == "Stroke"){
+        return `${data.points.length}points ${data.color} ${data.width}`;
+    }
+    else {
+        return JSON.stringify(data)
     }
 }

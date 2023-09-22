@@ -3,3 +3,4 @@ dist
 .parcel-cache
 .vscode
 src/.env.json
+boards
