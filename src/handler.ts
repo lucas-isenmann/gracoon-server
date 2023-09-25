@@ -5,7 +5,7 @@ import * as fs from 'fs';
 
 export function handleGetParameterInfo(paramId: string, callback: (response: string) => void){
     console.log(`Handle: get-parameter-info: ${paramId}`)
-    fs.readFile("./dist/src/parameters_info/" + paramId + ".html", 'utf-8', (err, data) => {
+    fs.readFile("./dist/src/parameters_info/" + paramId + ".md", 'utf-8', (err, data) => {
         if (err) {
           console.error(err);
           return;
