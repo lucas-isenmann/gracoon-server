@@ -19,9 +19,10 @@ import { SubdivideLinkModification } from "./modifications/implementations/subdi
 
 import { Client } from "./user";
 import { GenerateGraph } from "./modifications/implementations/generate_graph";
+import { handleGetParameterInfo } from "./handler";
 
 
-console.log( process.env.USER );
+
 
 
 // Initialize the server
@@ -73,6 +74,7 @@ io.sockets.on('connection', function (socket: Socket) {
     // ---------------------------------------------------------
     // Setup General API
     socket.on("get-public-boards", handleGetPublicRooms);
+    socket.on("get-parameter-info", handleGetParameterInfo);
 
     function handleGetPublicRooms(){
         const data = new Array<string>();
@@ -81,6 +83,7 @@ io.sockets.on('connection', function (socket: Socket) {
         }
         socket.emit("get-public-boards", data)
     }
+
     
     // ---------------------------------------------------------
     // SETUP NON GRAPH ACTIONS

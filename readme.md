@@ -9,5 +9,3 @@ Fix the port you want to use in your `.env` file.
     npm run build
     mkdir boards
     npm start
-   
-

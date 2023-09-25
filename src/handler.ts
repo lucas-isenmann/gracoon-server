@@ -1,9 +1,19 @@
 import { HistBoard } from "./hist_board";
 import { BoardModification } from "./modifications/modification";
+import * as fs from 'fs';
 
 
-
-
+export function handleGetParameterInfo(paramId: string, callback: (response: string) => void){
+    console.log(`Handle: get-parameter-info: ${paramId}`)
+    fs.readFile("./dist/src/parameters_info/" + paramId + ".html", 'utf-8', (err, data) => {
+        if (err) {
+          console.error(err);
+          return;
+        }
+      
+        callback(data);
+      });
+}
 
 export function handleBoardModification(board: HistBoard, modif: BoardModification | undefined){
     if (typeof modif == "undefined"){
