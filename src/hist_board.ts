@@ -32,6 +32,7 @@ export class HistBoard extends ServerBoard {
             console.log("ERROR: try to implement but failed: " , r);
         }else {
             this.modifications_stack.push(modif);
+            // console.log(this.modifications_stack.length)
             this.modifications_canceled.length = 0;
         }
         return r;

@@ -8,7 +8,7 @@ import { GraphPaste } from './modifications/implementations/graph_paste';
 import { MergeVertices } from './modifications/implementations/merge_vertices';
 import { ResizeElement } from './modifications/implementations/resize_element';
 import { TranslateElements } from './modifications/implementations/translate_elements';
-import { UpdateElement } from './modifications/implementations/update_element';
+import { UpdateElements } from './modifications/implementations/update_element';
 import { SENSIBILITY } from './modifications/modification';
 import { getRandomColor } from './utils';
 import PACKAGE from '../package.json';
@@ -193,7 +193,7 @@ io.sockets.on('connection', function (socket: Socket) {
 
     // Board Generic
     ResizeElement.addEvent(client);
-    UpdateElement.addEvent(client);
+    UpdateElements.addEvent(client);
     AddElement.addEvent(client);
     TranslateElements.addEvent(client);
     DeleteElements.addEvent(client);
