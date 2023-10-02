@@ -1,6 +1,9 @@
+import { Area, BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Stroke, TextZone } from "gramoloss";
 import { io } from ".";
 import { ServerBoard, BoardModification, SENSIBILITY } from "./modifications/modification";
 import { Client } from "./user";
+
+export type BoardElement = BasicVertex<BasicVertexData>|BasicLink<BasicVertexData, BasicLinkData>|Stroke|Area|TextZone;
 
 export class HistBoard extends ServerBoard {
     clients: Map<string, Client>;

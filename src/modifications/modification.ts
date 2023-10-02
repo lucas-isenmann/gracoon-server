@@ -1,4 +1,4 @@
-import { Board, Stroke, Area, TextZone, Representation, Rectangle, BasicVertexData, BasicLinkData } from "gramoloss";
+import { Board, Stroke, Area, TextZone, Representation, Rectangle, BasicVertexData, BasicLinkData, BasicVertex, BasicLink } from "gramoloss";
 import { HistBoard } from "../hist_board";
 
 export enum SENSIBILITY {
@@ -18,6 +18,30 @@ export enum RESIZE_TYPE {
     BOTTOM_RIGHT = "BOTTOM_RIGHT",
     BOTTOM_LEFT = "BOTTOM_LEFT"
 }
+
+
+export enum BoardElementKind {
+    TextZone = "TextZone",
+    Area = "Area",
+    Vertex = "Vertex",
+    Link = "Link",
+    Stroke = "Stroke"
+}
+
+export function kindOfElement(element: BasicVertex<BasicVertexData> | BasicLink<BasicVertexData, BasicLinkData> | Stroke | Area | TextZone ): BoardElementKind{
+    if (element instanceof BasicVertex){
+        return BoardElementKind.Vertex;
+    } else if (element instanceof BasicLink){
+        return BoardElementKind.Link;
+    } else if (element instanceof Stroke){
+        return BoardElementKind.Stroke;
+    } else if (element instanceof Area){
+        return BoardElementKind.Area;
+    } else 
+        return BoardElementKind.TextZone;
+}
+
+
 
 export class ServerBoard extends Board<BasicVertexData, BasicLinkData, Stroke, Area, TextZone, Representation, Rectangle>{
     

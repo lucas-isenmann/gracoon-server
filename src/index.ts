@@ -1,7 +1,7 @@
 import { Coord, BasicVertexData, BasicVertex } from "gramoloss";
 import ENV from './.env.json';
 import { HistBoard } from './hist_board';
-import { AddElement } from './modifications/implementations/add_element';
+import { AddElements } from './modifications/implementations/add_element';
 import { ApplyModifyer } from './modifications/implementations/apply_modifyer';
 import { DeleteElements } from './modifications/implementations/delete_elements';
 import { GraphPaste } from './modifications/implementations/graph_paste';
@@ -65,11 +65,12 @@ export function broadcastInRoom(roomId: string, name: string, data: any, s: Set<
 io.sockets.on('connection', function (socket: Socket) {
 
     // Initialization
+    console.log("--------------------------------")
     console.log("connection from ", socket.id);
-    console.log("   user-agent: "+socket.request.headers['user-agent']);
+    console.log("   ", socket.request.headers['user-agent']);
     console.log("   ", socket.handshake.address)
     const client = new Client(socket, getRandomColor());
-
+    console.log("--------------------------------")
 
     // ---------------------------------------------------------
     // Setup General API
@@ -194,7 +195,7 @@ io.sockets.on('connection', function (socket: Socket) {
     // Board Generic
     ResizeElement.addEvent(client);
     UpdateElements.addEvent(client);
-    AddElement.addEvent(client);
+    AddElements.addEvent(client);
     TranslateElements.addEvent(client);
     DeleteElements.addEvent(client);
 
