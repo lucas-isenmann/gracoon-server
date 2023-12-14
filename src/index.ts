@@ -1,4 +1,4 @@
-import { Coord, BasicVertexData, BasicVertex } from "gramoloss";
+import { Coord, BasicVertexData, BasicVertex, Rectangle, BasicLinkData, BasicLink, ORIENTATION, Stroke, Area, TextZone } from "gramoloss";
 import ENV from './.env.json';
 import { HistBoard } from './hist_board';
 import { AddElements } from './modifications/implementations/add_element';
@@ -116,8 +116,101 @@ io.sockets.on('connection', function (socket: Socket) {
             }
         }
         else {
-            console.log("asked room does not exist");
-            socket.emit("update_room_id", client.board.roomId);
+            console.log(`Asked room (${roomIdAsked}) does not exist in memory`);
+
+            // Try to load it
+            const filePath = `${ENV.boardsPath}${roomIdAsked}.json`;
+            try {
+                const rawData = fs.readFileSync(filePath, 'utf8');
+                console.log(`${ENV.boardsPath}${roomIdAsked}.json file exists` );
+                const jsonData = JSON.parse(rawData);
+
+                const newBoard = new HistBoard(roomIdAsked);
+
+                if ( jsonData.hasOwnProperty("vertices")){
+                    for (const rawVertex of jsonData.vertices){
+                        const pos = new Coord(rawVertex.data.pos.x, rawVertex.data.pos.y);
+                        const data = new BasicVertexData(pos, rawVertex.data.weight, rawVertex.data.color);
+                        const vertex = new BasicVertex(rawVertex.index, data);
+                        newBoard.graph.vertices.set(rawVertex.index, vertex);
+                    }
+                }
+
+                if (jsonData.hasOwnProperty("links")){
+                    for (const rawLink of jsonData.links){
+                        const index = rawLink.index;
+                        const startVertex = newBoard.graph.vertices.get(rawLink.startVertex.index);
+                        const endVertex = newBoard.graph.vertices.get(rawLink.endVertex.index);
+                        if (typeof startVertex == "undefined") continue;
+                        if (typeof endVertex == "undefined") continue;
+                        const weight = rawLink.data.weight;
+                        const color = rawLink.data.color;
+                        const orientation = rawLink.orientation as ORIENTATION;
+                        const cp = rawLink.data.hasOwnProperty("cp") ? new Coord(rawLink.data.cp.x, rawLink.data.cp.y): undefined;
+                        const data = new BasicLinkData(cp, weight, color);
+                        const link = new BasicLink(index, startVertex, endVertex, orientation, data);
+                        newBoard.graph.links.set(index, link);
+                    }
+                }
+
+                if (jsonData.hasOwnProperty("strokes")){
+                    for (const rawStroke of jsonData.strokes){
+                        const index = rawStroke.index;
+                        const width = rawStroke.width;
+                        const positions = new Array();
+                        for (const pos of rawStroke.positions){
+                            positions.push( new Coord(pos.x, pos.y));
+                        }
+                        const color = rawStroke.color;
+                        const stroke = new Stroke(positions, color, width, index);
+                        newBoard.strokes.set(index, stroke);
+                    }
+                }
+
+                if ( jsonData.hasOwnProperty("areas")){
+                    for (const rawArea of jsonData.areas){
+                        const index = rawArea.index;
+                        const c1 = new Coord(rawArea.c1.x, rawArea.c1.y);
+                        const c2 = new Coord(rawArea.c2.x, rawArea.c2.y);
+                        const color = rawArea.color;
+                        const label = rawArea.label;
+                        const area = new Area(label, c1, c2, color, index);
+                        newBoard.areas.set(index, area);
+                    }
+                }
+
+                if ( jsonData.hasOwnProperty("textZones")){
+                    for (const rawTextZone of jsonData.textZones){
+                        const index = rawTextZone.index;
+                        const pos = new Coord(rawTextZone.pos.x, rawTextZone.pos.y);
+                        const width = rawTextZone.width;
+                        const text = rawTextZone.text;
+                        const textZone = new TextZone(pos, width, text, index);
+                        newBoard.text_zones.set(index, textZone);
+                    }
+                }
+
+                if ( jsonData.hasOwnProperty("rectangles")){
+                    for (const rawRectangle of jsonData.rectangles){
+                        const index = rawRectangle.index;
+                        const c1 = new Coord(rawRectangle.c1.x, rawRectangle.c1.y);
+                        const c2 = new Coord(rawRectangle.c2.x, rawRectangle.c2.y);
+                        const color = rawRectangle.color;
+                        const rectangle = new Rectangle(c1, c2, color, index);
+                        newBoard.rectangles.set(rawRectangle.index, rectangle);
+                    }
+                }
+
+                boards.set(roomIdAsked, newBoard);
+                client.joinBoard(newBoard);
+                
+            } catch (err) {
+                console.log('File does not exist');
+                socket.emit("update_room_id", client.board.roomId);
+
+            }
+            
+
         }
     }
 
@@ -125,15 +218,20 @@ io.sockets.on('connection', function (socket: Socket) {
         console.log(`Handle: disconnect, client: ${socket.id}`);
         client.broadcastToOthers('remove_user', socket.id);
         client.board.removeClient(socket.id);
-        const filePath = `${ENV.boardsPath}${client.board.roomId}.json`;
-        const fileContent = client.board.toString();
-        fs.writeFile(filePath, fileContent, (err) => {
-            if (err) {
-                console.error('An error occurred while saving the file:', err);
-              } else {
-                console.log('File saved successfully');
-              }
-        });
+        if (client.board.isEmpty() == false){
+            const filePath = `${ENV.boardsPath}${client.board.roomId}.json`;
+            const fileContent = client.board.toString();
+            fs.writeFile(filePath, fileContent, (err) => {
+                if (err) {
+                    console.error('An error occurred while saving the file:', err);
+                  } else {
+                    console.log(`File ${client.board.roomId}.json saved successfully (${client.board.getNbElements()} elements)`);
+                  }
+            });
+        } else {
+            console.log(`Board ${client.board.roomId} is empty and therefore not saved.`)
+        }
+       
     }
 
     function handleUpdateUser(x: number, y: number) {

@@ -16,7 +16,15 @@ export class TranslateElements implements BoardModification {
 
     try_implement(board: ServerBoard): Set<SENSIBILITY> | string{
         for (const [kind, index] of this.indices) {
-            if (kind == "TextZone"){
+            if (kind == "Rectangle"){
+                const rectangle = board.rectangles.get(index);
+                if (typeof rectangle != "undefined"){
+                    rectangle.c1.translate(this.shift);
+                    rectangle.c2.translate(this.shift);
+                }else {
+                    return "Error: index not in rectangles";
+                }
+            } else if (kind == "TextZone"){
                 const textZone = board.text_zones.get(index);
                 if (textZone !== undefined){
                     textZone.pos.translate(this.shift);
@@ -58,7 +66,13 @@ export class TranslateElements implements BoardModification {
 
     deimplement(board: ServerBoard): Set<SENSIBILITY>{
         for (const [kind, index] of this.indices) {
-            if (kind == "TextZone"){
+            if (kind == "Rectangle"){
+                const rectangle = board.rectangles.get(index);
+                if (typeof rectangle != "undefined"){
+                    rectangle.c1.rtranslate(this.shift);
+                    rectangle.c2.rtranslate(this.shift);
+                }
+            } else if (kind == "TextZone"){
                 const textZone = board.text_zones.get(index);
                 if (textZone !== undefined){
                     textZone.pos.rtranslate(this.shift);
@@ -90,7 +104,7 @@ export class TranslateElements implements BoardModification {
 
 
     static handle(board: HistBoard, indices: Array<[string, number]>, rawShift: {x: number, y: number}) {
-        // console.log("Handle: translate_elements", indices, rawShift);
+        console.log("Handle: translate_elements", indices, rawShift);
         if ( !rawShift.hasOwnProperty('x') || !rawShift.hasOwnProperty('y')){
             console.log(`Error: cannot handle because give shift has no x or y property.`)
             return;

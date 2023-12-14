@@ -1,4 +1,4 @@
-import { Stroke, Area, TextZone, BasicVertex, BasicLink, BasicVertexData, BasicLinkData } from "gramoloss";
+import { Stroke, Area, TextZone, BasicVertex, BasicLink, BasicVertexData, BasicLinkData, Rectangle } from "gramoloss";
 import { broadcastInRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
@@ -15,14 +15,16 @@ export class DeleteElements implements BoardModification {
     strokes: Map<number, Stroke>;
     areas: Map<number, Area>;
     text_zones: Map<number, TextZone>;
+    rectangles: Map<number, Rectangle>;
 
-    constructor(agregId: string, vertices: Map<number, BasicVertex<BasicVertexData>>, links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>, strokes: Map<number, Stroke>, areas: Map<number, Area>, text_zones: Map<number, TextZone>) {
+    constructor(agregId: string, vertices: Map<number, BasicVertex<BasicVertexData>>, links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>, strokes: Map<number, Stroke>, areas: Map<number, Area>, text_zones: Map<number, TextZone>, rectangles: Map<number, Rectangle>) {
         this.agregId = agregId;
         this.vertices = vertices;
         this.links = links;
         this.strokes = strokes;
         this.areas = areas;
         this.text_zones = text_zones;
+        this.rectangles = rectangles;
     }
 
     static fromBoard(board: ServerBoard, agregId: string, indices: Array<[string, number]>): DeleteElements | undefined{
@@ -31,6 +33,7 @@ export class DeleteElements implements BoardModification {
         const strokes = new Map();
         const areas = new Map();
         const textZones = new Map();
+        const rectangles = new Map();
         for (const [kind, index] of indices){
             if (kind == "Vertex"){
                 const deletedVertex = board.graph.vertices.get(index);
@@ -57,12 +60,14 @@ export class DeleteElements implements BoardModification {
                 areas.set(index, board.areas.get(index));
             } else if (kind == "TextZone"){
                 textZones.set(index, board.text_zones.get(index));
+            } else if (kind == "Rectangle"){
+                rectangles.set(index, board.rectangles.get(index));
             } else {
                 console.log(`Error: DeleteElements.fromBoard: kind ${kind} not supported`);
                 return undefined;
             }
         }
-        return new DeleteElements(agregId, vertices, links, strokes, areas, textZones);
+        return new DeleteElements(agregId, vertices, links, strokes, areas, textZones, rectangles);
     }
 
     try_implement(board: ServerBoard): Set<SENSIBILITY> | string{
@@ -80,6 +85,9 @@ export class DeleteElements implements BoardModification {
         }
         for (const index of this.text_zones.keys()){
             board.text_zones.delete(index);
+        }
+        for (const index of this.rectangles.keys()){
+            board.rectangles.delete(index);
         }
         // TODO set is false
         return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
@@ -102,10 +110,13 @@ export class DeleteElements implements BoardModification {
         for (const [index, text_zone] of this.text_zones.entries()){
             board.text_zones.set(index, text_zone);
         }
+        for (const [index, rectangle] of this.rectangles.entries()){
+            board.rectangles.set(index, rectangle);
+        }
         return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
     }
 
-    agregate(board: HistBoard, elementsToDelete: Array<BasicVertex<BasicVertexData> | BasicLink<BasicVertexData, BasicLinkData> | Stroke | Area | TextZone>){
+    agregate(board: HistBoard, elementsToDelete: Array<BasicVertex<BasicVertexData> | BasicLink<BasicVertexData, BasicLinkData> | Stroke | Area | TextZone | Rectangle>){
         for (const element of elementsToDelete){
             if (element instanceof BasicVertex){
                 this.vertices.set(element.index, element);
@@ -122,6 +133,9 @@ export class DeleteElements implements BoardModification {
             } else if (element instanceof TextZone){
                 this.text_zones.set(element.index, element);
                 board.text_zones.delete(element.index);
+            } else if (element instanceof Rectangle){
+                this.rectangles.set(element.index, element);
+                board.rectangles.delete(element.index);
             }
         }
     }
@@ -165,6 +179,9 @@ export class DeleteElements implements BoardModification {
         for (const id of this.text_zones.keys()){
             indices.push(["TextZone", id])
         }
+        for (const id of this.rectangles.keys()){
+            indices.push(["Rectangle", id])
+        }
 
         broadcastInRoom(board.roomId, "delete_elements", indices, new Set());
     }
@@ -186,6 +203,9 @@ export class DeleteElements implements BoardModification {
         for (const [index, text_zone] of this.text_zones.entries()) {
             removed.push({ kind: "TextZone", index: index, element: text_zone });
         }
+        for (const [index, rectangle] of this.rectangles.entries()){
+            removed.push({kind: "Rectangle", index: index, element: rectangle})
+        }
         broadcastInRoom(board.roomId, "add_elements", removed, new Set());
     }
 
@@ -205,7 +225,7 @@ function transformRawElements(board: HistBoard, rawElements: Array<[string, numb
         if (kind == "Vertex"){
             const deletedVertex = board.graph.vertices.get(index);
             if (typeof deletedVertex == "undefined"){
-                console.log(`Error: DeleteElements.fromBoard: vertex index ${index} does not exists`);
+                console.log(`Error: DeleteElements.fromBoard: vertex index ${index} does not exist`);
                 return undefined;
             }
             elements.push(deletedVertex);
@@ -217,31 +237,38 @@ function transformRawElements(board: HistBoard, rawElements: Array<[string, numb
         } else if (kind == "Link"){
             const deletedLink = board.graph.links.get(index);
             if (typeof deletedLink == "undefined"){
-                console.log(`Error: DeleteElements.fromBoard: link index ${index} does not exists`);
+                console.log(`Error: DeleteElements.fromBoard: link index ${index} does not exist`);
                 return undefined;
             }
             elements.push(deletedLink);
         } else if (kind == "Stroke"){
             const stroke = board.strokes.get(index);
             if (typeof stroke == "undefined"){
-                console.log(`Error: DeleteElements.fromBoard: stroke index ${index} does not exists`);
+                console.log(`Error: DeleteElements.fromBoard: stroke index ${index} does not exist`);
                 return undefined;
             }
             elements.push(stroke);
         } else if (kind == "Area"){
             const area = board.areas.get(index);
             if (typeof area == "undefined"){
-                console.log(`Error: DeleteElements.fromBoard: area index ${index} does not exists`);
+                console.log(`Error: DeleteElements.fromBoard: area index ${index} does not exist`);
                 return undefined;
             }
             elements.push(area);
         } else if (kind == "TextZone"){
             const tz = board.areas.get(index);
             if (typeof tz == "undefined"){
-                console.log(`Error: DeleteElements.fromBoard: textZone index ${index} does not exists`);
+                console.log(`Error: DeleteElements.fromBoard: textZone index ${index} does not exist`);
                 return undefined;
             }
             elements.push(tz);
+        } else if (kind == "Rectangle"){
+            const rectangle = board.rectangles.get(index);
+            if (typeof rectangle == "undefined"){
+                console.log(`Error: DeleteElements.fromBoard: rectangle index ${index} does not exist`);
+                return undefined;
+            }
+            elements.push(rectangle);
         } else {
             console.log(`Error: DeleteElements.fromBoard: kind ${kind} not supported`);
             return undefined;

@@ -25,10 +25,11 @@ export enum BoardElementKind {
     Area = "Area",
     Vertex = "Vertex",
     Link = "Link",
-    Stroke = "Stroke"
+    Stroke = "Stroke",
+    Rectangle = "Rectangle"
 }
 
-export function kindOfElement(element: BasicVertex<BasicVertexData> | BasicLink<BasicVertexData, BasicLinkData> | Stroke | Area | TextZone ): BoardElementKind{
+export function kindOfElement(element: BasicVertex<BasicVertexData> | BasicLink<BasicVertexData, BasicLinkData> | Stroke | Area | TextZone | Rectangle ): BoardElementKind{
     if (element instanceof BasicVertex){
         return BoardElementKind.Vertex;
     } else if (element instanceof BasicLink){
@@ -37,7 +38,9 @@ export function kindOfElement(element: BasicVertex<BasicVertexData> | BasicLink<
         return BoardElementKind.Stroke;
     } else if (element instanceof Area){
         return BoardElementKind.Area;
-    } else 
+    } else if (element instanceof Rectangle){
+        return BoardElementKind.Rectangle;
+    } 
         return BoardElementKind.TextZone;
 }
 

@@ -1,9 +1,9 @@
-import { Area, BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Stroke, TextZone } from "gramoloss";
+import { Area, BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Rectangle, Stroke, TextZone } from "gramoloss";
 import { io } from ".";
 import { ServerBoard, BoardModification, SENSIBILITY } from "./modifications/modification";
 import { Client } from "./user";
 
-export type BoardElement = BasicVertex<BasicVertexData>|BasicLink<BasicVertexData, BasicLinkData>|Stroke|Area|TextZone;
+export type BoardElement = BasicVertex<BasicVertexData>|BasicLink<BasicVertexData, BasicLinkData>|Stroke|Area|TextZone | Rectangle;
 
 export class HistBoard extends ServerBoard {
     clients: Map<string, Client>;
@@ -98,8 +98,23 @@ export class HistBoard extends ServerBoard {
             links: Array.from(this.graph.links.values()),
             strokes: Array.from(this.strokes.values()),
             areas: Array.from(this.areas.values()),
-            textZones: Array.from(this.text_zones.values())
+            textZones: Array.from(this.text_zones.values()),
+            rectangles: Array.from(this.rectangles.values())
         }
         return JSON.stringify(data)
+    }
+
+    /**
+     * Return the number of elements in the board. 
+     */
+    getNbElements(): number {
+        return this.graph.vertices.size + this.graph.links.size + this.areas.size + this.rectangles.size + this.text_zones.size + this.strokes.size;
+    }
+
+    /**
+     * Returns true if there is no element in the board.
+     */
+    isEmpty(): boolean{
+        return this.getNbElements() == 0;
     }
 }

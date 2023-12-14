@@ -91,8 +91,17 @@ export class UpdateElements implements BoardModification {
                         console.log(`parameter ${update.param} not implemented`)
                     }
                 }
-            }else {
-                return "Error: index not in text_zones";
+            } else if (update.kind == "Rectangle" && board.rectangles.has(update.index)){
+                const rectangle = board.rectangles.get(update.index);
+                if (rectangle !== undefined){
+                    if (update.param == "color"){
+                        rectangle.color = update.new_value;
+                    } else {
+                        console.log(`Error: parameter ${update.param} not supported for Rectangle`)
+                    }
+                }
+            } else {
+                return `Error: unsupported kind ${update.kind} or index ${update.index} not in keys.`;
             }
         }
         return new Set();
@@ -155,6 +164,15 @@ export class UpdateElements implements BoardModification {
                         area.label = update.old_value;
                     } else {
                         console.log(`parameter ${update.param} not implemented`)
+                    }
+                }
+            } else if (update.kind == "Rectangle" && board.rectangles.has(update.index)){
+                const rectangle = board.rectangles.get(update.index);
+                if (typeof rectangle != "undefined"){
+                    if (update.param == "color"){
+                        rectangle.color = update.old_value;
+                    } else {
+                        console.log(`Error: parameter ${update.param} not supported for Rectangle`)
                     }
                 }
             }

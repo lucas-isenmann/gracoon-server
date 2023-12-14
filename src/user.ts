@@ -51,10 +51,10 @@ export class Client {
 
     emitBoard(){
         const s = new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC]);
-        this.socket.emit('graph', [...this.board.graph.vertices.entries()], [...this.board.graph.links.entries()], [...s]);
-        this.socket.emit("reset_board", [...this.board.text_zones.entries()]);
-        this.socket.emit('strokes', [...this.board.strokes.entries()]);
-        this.socket.emit('areas', [...this.board.areas.entries()]);
+        this.socket.emit("graph", [...this.board.graph.vertices.entries()], [...this.board.graph.links.entries()], [...s]);
+        this.socket.emit("reset_board", [...this.board.text_zones.entries()], [...this.board.rectangles.values()] );
+        this.socket.emit("strokes", [...this.board.strokes.entries()]);
+        this.socket.emit("areas", [...this.board.areas.entries()]);
     }
 
     /**

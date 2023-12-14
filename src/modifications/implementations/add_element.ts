@@ -1,4 +1,4 @@
-import { Stroke, Area, TextZone, BasicVertexData, BasicLinkData, BasicVertex, BasicLink, Coord, ORIENTATION, Option } from "gramoloss";
+import { Stroke, Area, TextZone, BasicVertexData, BasicLinkData, BasicVertex, BasicLink, Coord, ORIENTATION, Option, Rectangle } from "gramoloss";
 import { broadcastInRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { BoardElement, HistBoard } from "../../hist_board";
@@ -44,6 +44,8 @@ export class AddElements implements BoardModification {
                 board.graph.delete_vertex(element.index);
             } else if (element instanceof BasicLink){
                 board.graph.links.delete(element.index);
+            } else if (element instanceof Rectangle){
+                board.rectangles.delete(element.index);
             }
         }
         
@@ -141,6 +143,12 @@ function toShortString(kind: string, data: any): string{
 
 
 function elementFromRaw(board: HistBoard, kind: string, data: any): Option<BoardElement>{
+    if (kind == "Rectangle"){
+        const newIndex = board.get_next_available_index_rectangle();
+        const c1 = new Coord(data.c1.x, data.c1.y);
+        const c2 = new Coord(data.c2.x, data.c2.y);
+        return new Rectangle(c1, c2, data.color, newIndex);
+    }
     if (kind == "Stroke") {
         const newIndex = board.get_next_available_index_strokes();
         const positions = new Array();
@@ -225,6 +233,12 @@ function trySetElement(board: HistBoard, element: BoardElement): string | undefi
             return "index " + String(element.index) + " already exists in areas";
         } else {
             board.areas.set(element.index, element);
+        }
+    } else if (element instanceof Rectangle){
+        if ( board.rectangles.has(element.index) ){
+            return "index " + String(element.index) + " already exists in rectangles";
+        } else {
+            board.rectangles.set(element.index, element);
         }
     }
     return undefined;
