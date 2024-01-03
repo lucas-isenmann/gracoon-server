@@ -65,8 +65,15 @@ export function broadcastInRoom(roomId: string, name: string, data: any, s: Set<
 io.sockets.on('connection', function (socket: Socket) {
 
     // Initialization
+    const userAgent = socket.request.headers['user-agent'];
+    let isBot = false;
+    
+    if (typeof userAgent != "undefined" && userAgent.indexOf("bot") !== -1){
+        isBot = true;
+     }
+
     console.log("--------------------------------")
-    console.log("connection from ", socket.id);
+    console.log("connection from ", socket.id, isBot ? "BOT" : "");
     console.log("   ", socket.request.headers['user-agent']);
     console.log("   ", socket.handshake.address)
     const client = new Client(socket, getRandomColor());
