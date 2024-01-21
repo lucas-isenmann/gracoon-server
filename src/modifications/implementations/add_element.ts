@@ -74,9 +74,10 @@ export class AddElements implements BoardModification {
     }
 
 
-    static handle(board: HistBoard, agregId: string, kind: string, data: any, callback: (created_index: number) => void) {
-        console.log(`Handle: add_element in ${board.roomId}: ${kind} ${toShortString(kind, data)}`);
-        
+    static handle(board: HistBoard, clientId: string, agregId: string, kind: string, data: any, callback: (created_index: number) => void) {
+        console.log(`Handle: add_element b:${board.roomId} u:${clientId} a:${agregId} ${kind} ${toShortString(kind, data)}`);
+
+
         if (board.modifications_stack.length > 0){
             const lastModif = board.modifications_stack[board.modifications_stack.length-1];
             if (lastModif instanceof AddElements && lastModif.agregId == agregId){
@@ -121,7 +122,7 @@ export class AddElements implements BoardModification {
     }
 
     static addEvent(client: Client){
-        client.socket.on("add_element", (agregId: string, kind: string, data: any, callback: (created_index: number) => void) => { AddElements.handle(client.board, agregId, kind, data, callback)} );
+        client.socket.on("add_element", (agregId: string, kind: string, data: any, callback: (created_index: number) => void) => { AddElements.handle(client.board, client.label, agregId, kind, data, callback)} );
     }
 }
 

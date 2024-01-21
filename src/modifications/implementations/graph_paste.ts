@@ -53,8 +53,8 @@ export class GraphPaste implements BoardModification {
         return new Set([SENSIBILITY.ELEMENT])
     }
 
-    static handle(board: HistBoard, rawElements: any[]): void{
-        console.log(`Board[${board.roomId}]: paste_graph ${rawElements.length} elements`);
+    static handle(board: HistBoard, clientId: string, rawElements: any[]): void{
+        console.log(`Handle: paste_graph b:${board.roomId} u:${clientId} ${rawElements.length} elements`);
 
         const addedVertices = new Map<number, BasicVertex<BasicVertexData>>();
         const addedLinks = new Array<BasicLink<BasicVertexData, BasicLinkData>>();
@@ -178,7 +178,7 @@ export class GraphPaste implements BoardModification {
 
 
     static addEvent(client: Client){
-        client.socket.on("paste_graph", (rawElements: any[]) => {GraphPaste.handle(client.board, rawElements)});
+        client.socket.on("paste_graph", (rawElements: any[]) => {GraphPaste.handle(client.board, client.label, rawElements)});
     }
 }
 

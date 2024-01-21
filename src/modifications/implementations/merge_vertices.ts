@@ -116,8 +116,8 @@ export class MergeVertices implements BoardModification {
         return new MergeVertices(vertexFixed,  vertex_to_remove, deleted_links, modified_links_indices);
     }
 
-    static handle(board: HistBoard, fixedVertexId: number, vertexToRemoveId: number) {
-        console.log(`Handle: vertices_merge: fixed: ${fixedVertexId} toRemove: ${vertexToRemoveId}`);
+    static handle(board: HistBoard, clientId: string, fixedVertexId: number, vertexToRemoveId: number) {
+        console.log(`Handle: vertices_merge b:${board.roomId} u:${clientId} fixed: ${fixedVertexId} toRemove: ${vertexToRemoveId}`);
         board.handleUndo(); // TODO its not necessarily the last which is a translate
         // if Merge is impossible do not cancel last modification
         const modif = MergeVertices.fromBoard(board,  fixedVertexId, vertexToRemoveId);
@@ -136,6 +136,6 @@ export class MergeVertices implements BoardModification {
     }
 
     static addEvent(client: Client){
-        client.socket.on("vertices_merge", (fixedVertexId: number, vertexToRemoveId: number) => MergeVertices.handle(client.board, fixedVertexId, vertexToRemoveId));
+        client.socket.on("vertices_merge", (fixedVertexId: number, vertexToRemoveId: number) => MergeVertices.handle(client.board, client.label, fixedVertexId, vertexToRemoveId));
     }
 }

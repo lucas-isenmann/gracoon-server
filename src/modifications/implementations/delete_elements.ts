@@ -140,8 +140,8 @@ export class DeleteElements implements BoardModification {
         }
     }
 
-    static handle(board: HistBoard, agregId: string, rawElements: Array<[string, number]>): void{
-        console.log("Handle: delete_elements", agregId, rawElements);
+    static handle(board: HistBoard, clientId: string, agregId: string, rawElements: Array<[string, number]>): void{
+        console.log(`Handle: delete_elements b:${board.roomId} u:${clientId} a:${agregId}`, rawElements);
 
         if (board.modifications_stack.length > 0){
             const lastModif = board.modifications_stack[board.modifications_stack.length-1];
@@ -210,7 +210,7 @@ export class DeleteElements implements BoardModification {
     }
 
     static addEvent(client: Client){
-        client.socket.on("delete_elements", (agregId: string, indices: Array<[string, number]>) => { DeleteElements.handle(client.board, agregId, indices)});
+        client.socket.on("delete_elements", (agregId: string, indices: Array<[string, number]>) => { DeleteElements.handle(client.board, client.label, agregId, indices)});
 
     }
 }

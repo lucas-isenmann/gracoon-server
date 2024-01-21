@@ -68,12 +68,12 @@ export class ApplyModifyer implements BoardModification {
                 for (const index of board.graph.vertices.keys()) {
                     all_vertices_indices.push(index);
                 }
-                board.graph.completeSubgraphIntoTournament(all_vertices_indices, (index: number, startVertex: BasicVertex<BasicVertexData>, endVertex: BasicVertex<BasicVertexData>) => { return new BasicLink(index, startVertex, endVertex, ORIENTATION.DIRECTED, new BasicLinkData(undefined, "", "black")) })
+                board.graph.completeSubgraphIntoTournament(all_vertices_indices, (index: number, startVertex: BasicVertex<BasicVertexData>, endVertex: BasicVertex<BasicVertexData>) => { return new BasicLink(index, startVertex, endVertex, ORIENTATION.DIRECTED, new BasicLinkData(undefined, "", "Neutral")) })
             } else {
                 const area = board.areas.get(area_index);
                 if (area  !== undefined){
                     const vertices_indices = board.graph.vertices_contained_by_area(area);
-                    board.graph.completeSubgraphIntoTournament(vertices_indices, (index: number, startVertex: BasicVertex<BasicVertexData>, endVertex: BasicVertex<BasicVertexData>) => { return new BasicLink(index, startVertex, endVertex, ORIENTATION.DIRECTED, new BasicLinkData(undefined, "", "black")) })
+                    board.graph.completeSubgraphIntoTournament(vertices_indices, (index: number, startVertex: BasicVertex<BasicVertexData>, endVertex: BasicVertex<BasicVertexData>) => { return new BasicLink(index, startVertex, endVertex, ORIENTATION.DIRECTED, new BasicLinkData(undefined, "", "Neutral")) })
                 }
             }
 

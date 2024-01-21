@@ -59,8 +59,8 @@ export class SubdivideLinkModification implements BoardModification {
         return new SubdivideLinkModification(newVertex, newLink1, newLink2,  oldLink, callback )
     }
 
-    static handle(board: HistBoard, linkIndex: number, pos: Coord, weight: string, color: string, callback: (response: number) => void){
-        console.log("Handle: subdivide_link");
+    static handle(board: HistBoard, clientId: string, linkIndex: number, pos: Coord, weight: string, color: string, callback: (response: number) => void){
+        console.log(`Handle: subdivide_link b:${board.roomId} u:${clientId}`, linkIndex);
         const modif = SubdivideLinkModification.fromGraph(board, linkIndex, pos, weight, color, callback);
         handleBoardModification(board, modif);
     }
@@ -78,7 +78,7 @@ export class SubdivideLinkModification implements BoardModification {
     }
 
     static addEvent(client: Client){
-        client.socket.on("subdivide_link", (linkIndex: number, pos: {x: number, y: number}, weight: string, color: string, callback: (response: number) => void) => {SubdivideLinkModification.handle(client.board, linkIndex, new Coord(pos.x, pos.y), weight, color, callback)} );
+        client.socket.on("subdivide_link", (linkIndex: number, pos: {x: number, y: number}, weight: string, color: string, callback: (response: number) => void) => {SubdivideLinkModification.handle(client.board, client.label, linkIndex, new Coord(pos.x, pos.y), weight, color, callback)} );
     }
 
 }

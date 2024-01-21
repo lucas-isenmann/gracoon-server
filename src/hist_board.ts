@@ -68,7 +68,7 @@ export class HistBoard extends ServerBoard {
 
 
     handleUndo() {
-        console.log("Handle: undo");
+        console.log(`Handle: undo b:${this.roomId}`);
         const modif = this.modifications_stack.pop();
         if (modif !== undefined){
             const s = modif.deimplement(this);
@@ -81,7 +81,7 @@ export class HistBoard extends ServerBoard {
 
 
     handleRedo() {
-        console.log("Handle: redo");
+        console.log(`Handle: redo b:${this.roomId}`);
         const modif = this.redo();
         if (typeof modif === "string") {
             console.log(modif);

@@ -88,8 +88,8 @@ export class ResizeElement implements BoardModification {
         return new Set([]);
     }
 
-    static handle(board: HistBoard, kind: string, index: number, x: number, y: number, rawResizeType: string) {
-        console.log("Receive Request: resize_element");
+    static handle(board: HistBoard, clientId: string, kind: string, index: number, x: number, y: number, rawResizeType: string) {
+        console.log(`Handle: resize_element b:${board.roomId} u:${clientId}`);
         let element: undefined | Area | Representation | Rectangle = undefined;
         if (kind == "Area") {
             if (board.areas.has(index) == false) {
@@ -134,6 +134,6 @@ export class ResizeElement implements BoardModification {
     }
 
     static addEvent(client: Client){
-        client.socket.on("resize_element", ( kind: string, index: number, x: number, y: number, rawResizeType: string) => ResizeElement.handle(client.board, kind, index, x, y, rawResizeType));
+        client.socket.on("resize_element", ( kind: string, index: number, x: number, y: number, rawResizeType: string) => ResizeElement.handle(client.board, client.label, kind, index, x, y, rawResizeType));
     }
 }

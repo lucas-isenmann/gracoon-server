@@ -104,12 +104,13 @@ export class TranslateElements implements BoardModification {
 
 
     static handle(board: HistBoard, indices: Array<[string, number]>, rawShift: {x: number, y: number}) {
-        console.log("Handle: translate_elements", indices, rawShift);
+        // console.log("Handle: translate_elements", indices, rawShift);
         if ( !rawShift.hasOwnProperty('x') || !rawShift.hasOwnProperty('y')){
             console.log(`Error: cannot handle because give shift has no x or y property.`)
             return;
         }
         const shift = new Vect(rawShift.x, rawShift.y);
+        let agregate = false;        
 
         if (board.modifications_stack.length > 0) {
             const last_modif = board.modifications_stack[board.modifications_stack.length - 1];
@@ -119,8 +120,12 @@ export class TranslateElements implements BoardModification {
                     shift.translate(last_modif2.shift);
                     last_modif2.deimplement(board);
                     board.modifications_stack.pop();
+                    agregate = true;
                 }
             }
+        }
+        if (agregate == false){
+            console.log(`Handle: translate b:${board.roomId}`, indices, rawShift);
         }
         const modif = new TranslateElements(indices, shift);
         const r = board.try_push_new_modification(modif);

@@ -39,8 +39,8 @@ export class GenerateGraph implements BoardModification {
         return new Set([SENSIBILITY.ELEMENT])
     }
 
-    static handle(board: HistBoard, shift: {x: number, y: number}, generatorId: string, params: Array<any>): void{
-        console.log(`Handle generate-graph board(${board.roomId}) : ${shift.x.toFixed(2)} ${shift.y.toFixed(2)} ${generatorId} ${params}`);
+    static handle(board: HistBoard, clientId: string, shift: {x: number, y: number}, generatorId: string, params: Array<any>): void{
+        console.log(`Handle generate-graph b:${board.roomId} u:${clientId}: ${shift.x.toFixed(2)} ${shift.y.toFixed(2)} ${generatorId} ${params}`);
 
         const g = generateGraph(generatorId, params);
         if ( typeof g == "undefined"){
@@ -112,7 +112,7 @@ export class GenerateGraph implements BoardModification {
 
 
     static addEvent(client: Client){
-        client.socket.on("generate-graph", (pos: {x: number, y: number}, generatorId: string, params: Array<any>) => {GenerateGraph.handle(client.board, pos, generatorId, params)});
+        client.socket.on("generate-graph", (pos: {x: number, y: number}, generatorId: string, params: Array<any>) => {GenerateGraph.handle(client.board, client.label, pos, generatorId, params)});
     }
 }
 
