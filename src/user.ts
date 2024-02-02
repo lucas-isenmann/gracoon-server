@@ -38,6 +38,13 @@ export class Client {
         socket.join(roomId);
     }
 
+    /**
+     * emitError log to the client
+     */
+    emitError(msg: string){
+        this.socket.emit("error", msg);
+    }
+
     joinBoard(board: HistBoard){
         this.board.clients.delete(this.socket.id);
 

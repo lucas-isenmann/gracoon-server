@@ -1,4 +1,4 @@
-import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Link, Option, ORIENTATION, Vertex } from "gramoloss";
+import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Coord, Link, Option, ORIENTATION, Vertex } from "gramoloss";
 import { emitGraphToRoom } from "../..";
 import { HistBoard } from "../../hist_board";
 import { Client } from "../../user";
@@ -41,8 +41,8 @@ export class ApplyModifyer implements BoardModification {
         return new Set([SENSIBILITY.ELEMENT])
     }
 
-    static handle(board: HistBoard, name: string, attributesData: Array<any>, verticesSelection: Option<Array<number>>) {
-        console.log(`Handle: apply modifyer: ${name}`);
+    static handle(board: HistBoard, client: Client, name: string, attributesData: Array<any>, verticesSelection: Option<Array<number>>) {
+        console.log(`Handle: apply_modifyer b:${board.roomId} u:${client.label} modifyer:${name}`);
         const oldVertices = new Map<number, BasicVertex<BasicVertexData>>();
         const oldLinks = new Map<number, BasicLink<BasicVertexData, BasicLinkData>>();
         for (const [index, vertex] of board.graph.vertices.entries()) {
@@ -56,7 +56,27 @@ export class ApplyModifyer implements BoardModification {
             oldLinks.set(index, oldLink);
         }
 
-        if (name == "into_tournament") {
+        if (name == "subdivideLinks"){
+            if (attributesData.length != 2) {
+                const msg = `Error: wrong number of attributes: ${attributesData.length} (expected: 2)`;
+                console.log(msg);
+                client.emitError(msg);
+                return;
+            } 
+            
+            const areaIndex = attributesData[0];
+            const k = parseInt(attributesData[1]);
+            if (typeof areaIndex == "string") {
+                const allLinksIndices = new Set<number>();
+                for (const index of board.graph.links.keys()) {
+                    allLinksIndices.add(index);
+                }
+                board.graph.subdivideLinks(allLinksIndices, k, 
+                    (index: number, pos: Coord) => { return new BasicVertex(index, new BasicVertexData(pos, "", "Neutral"))},
+                    (index: number,orientation, color: string, startVertex: BasicVertex<BasicVertexData>, endVertex: BasicVertex<BasicVertexData>) => { return new BasicLink(index, startVertex, endVertex, orientation, new BasicLinkData(undefined, "", color)) } );
+            }
+        }
+        else if (name == "into_tournament") {
             if (attributesData.length != 1) {
                 console.log(`Error: wrong number of attributes: ${attributesData.length} (expected: 1)`);
                 return;
@@ -151,6 +171,6 @@ export class ApplyModifyer implements BoardModification {
     }
 
     static addEvent(client: Client){
-        client.socket.on("apply_modifyer", (name: string, attributesData: Array<any>, verticesSelection: Option<Array<number>>) => ApplyModifyer.handle(client.board, name, attributesData, verticesSelection));
+        client.socket.on("apply_modifyer", (name: string, attributesData: Array<any>, verticesSelection: Option<Array<number>>) => ApplyModifyer.handle(client.board, client, name, attributesData, verticesSelection));
     }
 }

@@ -192,18 +192,21 @@ export class UpdateElements implements BoardModification {
         this.updates.push(newUpdate);
     }
 
-    static handle(board: HistBoard, clientId: string, agregId: string, kind: string, index: number, param: string, new_value: any) {
+    static handle(board: HistBoard, client: Client, agregId: string, kind: string, index: number, param: string, new_value: any) {
         const old_value = board.get_value(kind, index, param);
-        if (typeof old_value == "undefined"){
-            console.log(`Error: value of kind:${kind} index:${index} param:${param} is undefined`)
-            console.log("Request rejected");
-            return;
-        }
+
         if (param == "cp") {
             if (new_value.hasOwnProperty('x') && new_value.hasOwnProperty('y')) {
                 new_value = new Coord(new_value.x, new_value.y);
             } else {
                 new_value = undefined;
+            }
+        } else {
+            if (typeof old_value == "undefined"){
+                const msg = `Error: value of kind:${kind} index:${index} param:${param} is undefined. Request rejected.`;
+                console.log(msg);
+                client.emitError(msg);
+                return;
             }
         }
 
@@ -219,7 +222,7 @@ export class UpdateElements implements BoardModification {
             }
         }
 
-        console.log(`Handle: update_element b:${board.roomId} u:${clientId} a:${agregId}`, kind, index, param, new_value);
+        console.log(`Handle: update_element b:${board.roomId} u:${client.label} a:${agregId}`, kind, index, param, new_value);
 
         
         const modif = new UpdateElements(agregId, index, kind, param, new_value, old_value);
@@ -244,7 +247,7 @@ export class UpdateElements implements BoardModification {
 
 
     static addEvent(client: Client){
-        client.socket.on("update_element", (agregId: string, kind: string, index: number, param: string, newValue: any) => UpdateElements.handle(client.board, client.label, agregId, kind, index, param, newValue));
+        client.socket.on("update_element", (agregId: string, kind: string, index: number, param: string, newValue: any) => UpdateElements.handle(client.board, client, agregId, kind, index, param, newValue));
     }
 
 }
