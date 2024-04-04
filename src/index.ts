@@ -26,20 +26,43 @@ import { handleGetParameterInfo } from "./handler";
 
 
 // Initialize the server
+// export const io = new Server({
+//   cors: {
+//     origin: "*",
+//     methods: ["GET", "POST"]
+//   }
+// });
 
-export const io = new Server({
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+// io.listen(ENV.port);
+
+// console.log("----------------------------------------------");
+// console.log(`Server started at http://localhost:${ENV.port}`);
+// console.log(`version: ${PACKAGE.version}`);
+// console.log("----------------------------------------------");
+
+
+import https from 'https';
+
+const httpsServer = https.createServer({
+    key: fs.readFileSync(ENV.keyPath),
+    cert: fs.readFileSync(ENV.certPath)
 });
 
-io.listen(ENV.port);
+export const io = new Server(httpsServer, {
+    cors: {
+        origin: ENV.corsOrigin
+    }
+});
 
-console.log("----------------------------------------------");
-console.log(`Server started at http://localhost:${ENV.port}`);
-console.log(`version: ${PACKAGE.version}`);
-console.log("----------------------------------------------");
+httpsServer.listen(ENV.port, () => {
+    console.log("----------------------------------------------");
+    console.log(`Server started at https://localhost:${ENV.port}`);
+    console.log(`version: ${PACKAGE.version}`);
+    console.log(`corsOrigin: ${ENV.corsOrigin}`);
+    console.log("----------------------------------------------");
+});
+
+
 
 
 /*
