@@ -3,7 +3,7 @@
 Gracoon is an online collaborative graph editor.
 This repository is the api/server of Gracoon.
 
-An instance is running on [gracoon.com](https://gracoon.com) :rocket:
+An instance is running on [gracoon.com](https://www.gracoon.com) :rocket:
 
 The client project can be found there: [https://github.com/lucas-test/gracoon-client](https://github.com/lucas-test/gracoon-client)
 
