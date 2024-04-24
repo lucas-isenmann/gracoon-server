@@ -20,10 +20,26 @@ It also manage the following objects:
 
 ## Install, build and launch server
 
-Fix the port you want to use in the `.env.json` file, the path to ssl keys and the Cors origin.
+Copy the example environment configuration file example:
 
-    npm i
     cp src/.env.json.example src/.env.json 
+
+In `.env.json` set the following attributes:
+    - the port you want to use,
+    - the path where the boards are stored,
+    - the path to ssl keys,
+    - the Cors origin.
+
+For a local server you can create self certificated keys with: 
+
+    openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out cert.pem
+
+Then create a directory where to store the boards (the server should have access to it):
+
+    mkdir /home/user/boards
+
+Then run the following commands to install, build and start the server.
+
+    npm ci
     npm run build
-    mkdir boards
     npm start
