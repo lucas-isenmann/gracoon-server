@@ -187,7 +187,28 @@ function elementFromRaw(board: HistBoard, kind: string, data: any): Option<Board
         const startVertex = board.graph.vertices.get(data.start_index);
         const endVertex = board.graph.vertices.get(data.end_index);
         if (typeof startVertex != "undefined" && typeof endVertex != "undefined"){
-            const newLinkData = new BasicLinkData(undefined, data.weight, data.color);
+
+            const startPos = startVertex.data.pos;
+            const endPos = endVertex.data.pos;
+            let cp: undefined | Coord = undefined;
+
+            const dist2 = startPos.dist2(endPos);
+            for (const v of board.graph.vertices.values()){
+                if (v.index == data.start_index || v.index == data.end_index) continue;
+                const proj = v.data.pos.orthogonal_projection(startPos, endPos.vectorTo(startPos));
+                const ps1 = startPos.vectorTo(proj).dot( startPos.vectorTo(endPos));
+                const ps2 = endPos.vectorTo(proj).dot( endPos.vectorTo(startPos));
+                if (proj.dist2(v.data.pos) <= dist2/100 && ps1 >= 0 && ps2 >= 0 ){
+                    cp = startPos.middle(endPos);
+                    const orth = startPos.vectorTo(endPos);
+                    orth.rotate(Math.PI/2);
+                    orth.setNorm(Math.sqrt(dist2)/2);
+                    cp.translate(orth);
+                    break;
+                }
+            }
+
+            const newLinkData = new BasicLinkData(cp, data.weight, data.color);
             return new BasicLink(newIndex, startVertex, endVertex, orient, newLinkData );
         } else {
             console.log(`Error: elementFromRaw trying: to create a link between undefined vertex index ${data.start_index} or ${data.end_index}`);

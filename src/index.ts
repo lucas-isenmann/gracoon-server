@@ -13,6 +13,7 @@ import { SENSIBILITY } from './modifications/modification';
 import { getRandomColor } from './utils';
 import PACKAGE from '../package.json';
 import * as fs from 'fs';
+import { ImportFile } from "./modifications/implementations/importFile";
 
 import { Server, Socket } from 'socket.io';
 import { SubdivideLinkModification } from "./modifications/implementations/subdivide_link";
@@ -319,6 +320,7 @@ io.sockets.on('connection', function (socket: Socket) {
     ApplyModifyer.addEvent(client);
     SubdivideLinkModification.addEvent(client);
     GenerateGraph.addEvent(client);
+    ImportFile.addEvent(client);
 
     // Board Generic
     ResizeElement.addEvent(client);
