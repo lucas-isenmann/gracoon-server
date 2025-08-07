@@ -1,18 +1,18 @@
-import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Coord, ORIENTATION } from "gramoloss";
+import { BasicLink, BasicVertex, BasicVertexData, Coord, ORIENTATION } from "gramoloss";
 import { broadcastInRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
 import { Client } from "../../user";
-import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
+import { BoardModification, SENSIBILITY, ServerBoard, ServerLinkData } from "../modification";
 
 export class ImportFile implements BoardModification {
     addedVertices: Array<BasicVertex<BasicVertexData>>;
-    addedLinks: Array<BasicLink<BasicVertexData, BasicLinkData>>;
+    addedLinks: Array<BasicLink<BasicVertexData, ServerLinkData>>;
 
 
     constructor(
         addedVertices: Array<BasicVertex<BasicVertexData>>, 
-        addedLinks: Array<BasicLink<BasicVertexData, BasicLinkData>>){
+        addedLinks: Array<BasicLink<BasicVertexData, ServerLinkData>>){
         this.addedVertices = addedVertices;
         this.addedLinks = addedLinks;
     }
@@ -87,7 +87,7 @@ export class ImportFile implements BoardModification {
 
 
         const addedVertices = new Map<number, BasicVertex<BasicVertexData>>();
-        const addedLinks = new Array<BasicLink<BasicVertexData, BasicLinkData>>();
+        const addedLinks = new Array<BasicLink<BasicVertexData, ServerLinkData>>();
         const vertexIndicesTransformation = new Map<string, number>(); // used to translate the vertices indices in the added links
 
 
@@ -122,7 +122,7 @@ export class ImportFile implements BoardModification {
                         console.log(`Error: cannot create ImportFile: cannot get new startVertex or new endVertex at indices ${startIndex} ${endIndex}`)
                         return;
                     }
-                    const linkData = new BasicLinkData(cp, label, "Neutral");
+                    const linkData = new ServerLinkData(cp, label, "Neutral", "normal");
                     const link = new BasicLink(newLinkIndices[j], startVertex, endVertex, ORIENTATION.DIRECTED, linkData);
                     addedLinks.push( link);
                     j++;
@@ -142,7 +142,7 @@ export class ImportFile implements BoardModification {
                     console.log(`Error: cannot create ImportFile: cannot get new startVertex or new endVertex at indices ${startIndex} ${endIndex}`)
                     return;
                 }
-                const linkData = new BasicLinkData(cp, label, "Neutral");
+                const linkData = new ServerLinkData(cp, label, "Neutral", "normal");
                 const link = new BasicLink(newLinkIndices[j], startVertex, endVertex, ORIENTATION.UNDIRECTED, linkData);
                 addedLinks.push( link);
                 j++;

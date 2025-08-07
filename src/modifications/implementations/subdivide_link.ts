@@ -1,20 +1,20 @@
-import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Coord } from "gramoloss";
+import { BasicLink, BasicVertex, BasicVertexData, Coord } from "gramoloss";
 import { emitGraphToRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
 import { Client } from "../../user";
-import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
+import { BoardModification, SENSIBILITY, ServerBoard, ServerLinkData } from "../modification";
 
 
 
 export class SubdivideLinkModification implements BoardModification {
     newVertex: BasicVertex<BasicVertexData>;
-    newLink1: BasicLink<BasicVertexData, BasicLinkData>;
-    newLink2: BasicLink<BasicVertexData, BasicLinkData>;
-    oldLink: BasicLink<BasicVertexData, BasicLinkData>;
+    newLink1: BasicLink<BasicVertexData, ServerLinkData>;
+    newLink2: BasicLink<BasicVertexData, ServerLinkData>;
+    oldLink: BasicLink<BasicVertexData, ServerLinkData>;
     callback: (response: number) => void;
     
-    constructor(newVertex: BasicVertex<BasicVertexData>, newLink1: BasicLink<BasicVertexData, BasicLinkData>, newLink2: BasicLink<BasicVertexData, BasicLinkData>,  oldLink: BasicLink<BasicVertexData, BasicLinkData>, callback: (response: number) => void ) {
+    constructor(newVertex: BasicVertex<BasicVertexData>, newLink1: BasicLink<BasicVertexData, ServerLinkData>, newLink2: BasicLink<BasicVertexData, ServerLinkData>,  oldLink: BasicLink<BasicVertexData, ServerLinkData>, callback: (response: number) => void ) {
         this.newVertex = newVertex;
         this.newLink1 = newLink1;
         this.newLink2 = newLink2;
@@ -49,8 +49,8 @@ export class SubdivideLinkModification implements BoardModification {
         const newVertexIndex = board.graph.get_next_available_index_vertex();
         const newVertex = new BasicVertex(newVertexIndex, newVertexData);
 
-        const newLink1Data = new BasicLinkData( undefined, "", oldLink.data.color);
-        const newLink2Data = new BasicLinkData( undefined, "", oldLink.data.color);
+        const newLink1Data = new ServerLinkData( undefined, "", oldLink.data.color, oldLink.data.strokeStyle);
+        const newLink2Data = new ServerLinkData( undefined, "", oldLink.data.color, oldLink.data.strokeStyle);
         const [newLink1Index, newLink2Index] = board.graph.get_next_n_available_link_indices(2);
 
         const newLink1 = new BasicLink(newLink1Index, oldLink.startVertex, newVertex, oldLink.orientation, newLink1Data);

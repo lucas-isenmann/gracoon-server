@@ -1,4 +1,4 @@
-import { Board, Stroke, Area, TextZone, Representation, Rectangle, BasicVertexData, BasicLinkData, BasicVertex, BasicLink } from "gramoloss";
+import { Option, Board, Stroke, Area, TextZone, Representation, Rectangle, BasicVertexData, BasicLinkData, BasicVertex, BasicLink, Coord } from "gramoloss";
 import { HistBoard } from "../hist_board";
 
 export enum SENSIBILITY {
@@ -46,7 +46,16 @@ export function kindOfElement(element: BasicVertex<BasicVertexData> | BasicLink<
 
 
 
-export class ServerBoard extends Board<BasicVertexData, BasicLinkData, Stroke, Area, TextZone, Representation, Rectangle>{
+export class ServerLinkData extends BasicLinkData {
+    strokeStyle: string = "normal";
+    
+    constructor(cp: Option<Coord>, weight: string, color: string, strokeStyle: string){
+        super(cp, weight, color);
+        this.strokeStyle = strokeStyle;
+    }
+}
+
+export class ServerBoard extends Board<BasicVertexData, ServerLinkData, Stroke, Area, TextZone, Representation, Rectangle>{
     
 }
 

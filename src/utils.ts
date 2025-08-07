@@ -19,7 +19,7 @@ export function eqSet (xs: Set<number>, ys: Set<number>): boolean {
     return xs.size === ys.size && [...xs].every((x) => ys.has(x));
 }
 
-export function eq_indices (xs: Array<[string,number]>, ys: Array<[string,number]>): boolean {
+export function eqIndices (xs: Array<[string,number]>, ys: Array<[string,number]>): boolean {
     for (const element of xs){
         let found = false;
         for (const e2 of ys){

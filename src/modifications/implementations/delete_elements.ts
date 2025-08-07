@@ -1,9 +1,9 @@
-import { Stroke, Area, TextZone, BasicVertex, BasicLink, BasicVertexData, BasicLinkData, Rectangle } from "gramoloss";
+import { Stroke, Area, TextZone, BasicVertex, BasicLink, BasicVertexData, Rectangle } from "gramoloss";
 import { broadcastInRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
 import { Client } from "../../user";
-import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
+import { BoardModification, SENSIBILITY, ServerBoard, ServerLinkData } from "../modification";
 
 /**
  * Contains the list of the deleted elements
@@ -11,13 +11,13 @@ import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 export class DeleteElements implements BoardModification {
     agregId: string;
     vertices: Map<number, BasicVertex<BasicVertexData>>;
-    links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>;
+    links: Map<number, BasicLink<BasicVertexData, ServerLinkData>>;
     strokes: Map<number, Stroke>;
     areas: Map<number, Area>;
     text_zones: Map<number, TextZone>;
     rectangles: Map<number, Rectangle>;
 
-    constructor(agregId: string, vertices: Map<number, BasicVertex<BasicVertexData>>, links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>, strokes: Map<number, Stroke>, areas: Map<number, Area>, text_zones: Map<number, TextZone>, rectangles: Map<number, Rectangle>) {
+    constructor(agregId: string, vertices: Map<number, BasicVertex<BasicVertexData>>, links: Map<number, BasicLink<BasicVertexData, ServerLinkData>>, strokes: Map<number, Stroke>, areas: Map<number, Area>, text_zones: Map<number, TextZone>, rectangles: Map<number, Rectangle>) {
         this.agregId = agregId;
         this.vertices = vertices;
         this.links = links;
@@ -116,7 +116,7 @@ export class DeleteElements implements BoardModification {
         return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
     }
 
-    agregate(board: HistBoard, elementsToDelete: Array<BasicVertex<BasicVertexData> | BasicLink<BasicVertexData, BasicLinkData> | Stroke | Area | TextZone | Rectangle>){
+    agregate(board: HistBoard, elementsToDelete: Array<BasicVertex<BasicVertexData> | BasicLink<BasicVertexData, ServerLinkData> | Stroke | Area | TextZone | Rectangle>){
         for (const element of elementsToDelete){
             if (element instanceof BasicVertex){
                 this.vertices.set(element.index, element);
@@ -219,7 +219,7 @@ export class DeleteElements implements BoardModification {
 
 
 
-function transformRawElements(board: HistBoard, rawElements: Array<[string, number]>): undefined | Array<BasicVertex<BasicVertexData> | BasicLink<BasicVertexData, BasicLinkData> | Stroke | Area | TextZone > {
+function transformRawElements(board: HistBoard, rawElements: Array<[string, number]>): undefined | Array<BasicVertex<BasicVertexData> | BasicLink<BasicVertexData, ServerLinkData> | Stroke | Area | TextZone > {
     const elements = new Array();
     for (const [kind, index] of rawElements){
         if (kind == "Vertex"){

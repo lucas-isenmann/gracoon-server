@@ -2,7 +2,7 @@ import { Vect } from "gramoloss";
 import { broadcastInRoom } from "../..";
 import { HistBoard } from "../../hist_board";
 import { Client } from "../../user";
-import { eq_indices } from "../../utils";
+import { eqIndices } from "../../utils";
 import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 
 export class TranslateElements implements BoardModification {
@@ -116,7 +116,7 @@ export class TranslateElements implements BoardModification {
             const last_modif = board.modifications_stack[board.modifications_stack.length - 1];
             if (last_modif.constructor == TranslateElements) {
                 const last_modif2 = last_modif as TranslateElements;
-                if (eq_indices(last_modif2.indices, indices)) {
+                if (eqIndices(last_modif2.indices, indices)) {
                     shift.translate(last_modif2.shift);
                     last_modif2.deimplement(board);
                     board.modifications_stack.pop();

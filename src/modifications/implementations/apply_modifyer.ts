@@ -1,16 +1,16 @@
-import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Coord, Link, Option, ORIENTATION, Vertex } from "gramoloss";
+import { BasicLink,  BasicVertex, BasicVertexData, Coord, Link, Option, ORIENTATION, Vertex } from "gramoloss";
 import { emitGraphToRoom } from "../..";
 import { HistBoard } from "../../hist_board";
 import { Client } from "../../user";
-import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
+import { BoardModification, SENSIBILITY, ServerBoard, ServerLinkData } from "../modification";
 
 export class ApplyModifyer implements BoardModification {
     old_vertices: Map<number, BasicVertex<BasicVertexData>>;
-    old_links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>;
+    old_links: Map<number, BasicLink<BasicVertexData, ServerLinkData>>;
     new_vertices: Map<number, BasicVertex<BasicVertexData>>;
-    new_links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>;
+    new_links: Map<number, BasicLink<BasicVertexData, ServerLinkData>>;
 
-    constructor(old_vertices: Map<number, BasicVertex<BasicVertexData>>, old_links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>, new_vertices: Map<number, BasicVertex<BasicVertexData>>,        new_links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>){
+    constructor(old_vertices: Map<number, BasicVertex<BasicVertexData>>, old_links: Map<number, BasicLink<BasicVertexData, ServerLinkData>>, new_vertices: Map<number, BasicVertex<BasicVertexData>>,        new_links: Map<number, BasicLink<BasicVertexData, ServerLinkData>>){
         this.old_vertices = old_vertices;
         this.old_links = old_links;
         this.new_vertices = new_vertices;
@@ -44,14 +44,14 @@ export class ApplyModifyer implements BoardModification {
     static handle(board: HistBoard, client: Client, name: string, attributesData: Array<any>, verticesSelection: Option<Array<number>>) {
         console.log(`Handle: apply_modifyer b:${board.roomId} u:${client.label} modifyer:${name}`);
         const oldVertices = new Map<number, BasicVertex<BasicVertexData>>();
-        const oldLinks = new Map<number, BasicLink<BasicVertexData, BasicLinkData>>();
+        const oldLinks = new Map<number, BasicLink<BasicVertexData, ServerLinkData>>();
         for (const [index, vertex] of board.graph.vertices.entries()) {
             const oldVertexData = new BasicVertexData(vertex.data.pos, vertex.data.weight, vertex.data.color);
             const oldVertex = new BasicVertex(index, oldVertexData);
             oldVertices.set(index, oldVertex);
         }
         for (const [index, link] of board.graph.links.entries()) {
-            const oldLinkData = new BasicLinkData(link.data.cp, link.data.weight, link.data.color);
+            const oldLinkData = new ServerLinkData(link.data.cp, link.data.weight, link.data.color, link.data.strokeStyle);
             const oldLink = new BasicLink(index, link.startVertex, link.endVertex, link.orientation, oldLinkData);
             oldLinks.set(index, oldLink);
         }
@@ -73,7 +73,7 @@ export class ApplyModifyer implements BoardModification {
                 }
                 board.graph.subdivideLinks(allLinksIndices, k, 
                     (index: number, pos: Coord) => { return new BasicVertex(index, new BasicVertexData(pos, "", "Neutral"))},
-                    (index: number,orientation, color: string, startVertex: BasicVertex<BasicVertexData>, endVertex: BasicVertex<BasicVertexData>) => { return new BasicLink(index, startVertex, endVertex, orientation, new BasicLinkData(undefined, "", color)) } );
+                    (index: number,orientation, color: string, startVertex: BasicVertex<BasicVertexData>, endVertex: BasicVertex<BasicVertexData>) => { return new BasicLink(index, startVertex, endVertex, orientation, new ServerLinkData(undefined, "", color, "normal")) } );
             }
         }
         else if (name == "into_tournament") {
@@ -88,12 +88,12 @@ export class ApplyModifyer implements BoardModification {
                 for (const index of board.graph.vertices.keys()) {
                     all_vertices_indices.push(index);
                 }
-                board.graph.completeSubgraphIntoTournament(all_vertices_indices, (index: number, startVertex: BasicVertex<BasicVertexData>, endVertex: BasicVertex<BasicVertexData>) => { return new BasicLink(index, startVertex, endVertex, ORIENTATION.DIRECTED, new BasicLinkData(undefined, "", "Neutral")) })
+                board.graph.completeSubgraphIntoTournament(all_vertices_indices, (index: number, startVertex: BasicVertex<BasicVertexData>, endVertex: BasicVertex<BasicVertexData>) => { return new BasicLink(index, startVertex, endVertex, ORIENTATION.DIRECTED, new ServerLinkData(undefined, "", "Neutral", "normal")) })
             } else {
                 const area = board.areas.get(area_index);
                 if (area  !== undefined){
                     const vertices_indices = board.graph.vertices_contained_by_area(area);
-                    board.graph.completeSubgraphIntoTournament(vertices_indices, (index: number, startVertex: BasicVertex<BasicVertexData>, endVertex: BasicVertex<BasicVertexData>) => { return new BasicLink(index, startVertex, endVertex, ORIENTATION.DIRECTED, new BasicLinkData(undefined, "", "Neutral")) })
+                    board.graph.completeSubgraphIntoTournament(vertices_indices, (index: number, startVertex: BasicVertex<BasicVertexData>, endVertex: BasicVertex<BasicVertexData>) => { return new BasicLink(index, startVertex, endVertex, ORIENTATION.DIRECTED, new ServerLinkData(undefined, "", "Neutral", "normal")) })
                 }
             }
 
@@ -139,14 +139,14 @@ export class ApplyModifyer implements BoardModification {
         }
 
         const new_vertices = new Map<number, BasicVertex<BasicVertexData>>();
-        const new_links = new Map<number, BasicLink<BasicVertexData, BasicLinkData>>();
+        const new_links = new Map<number, BasicLink<BasicVertexData, ServerLinkData>>();
         for (const [index, vertex] of board.graph.vertices.entries()) {
             const newVertexData = new BasicVertexData(vertex.data.pos.copy(), vertex.data.weight, vertex.data.color);
             const newVertex = new BasicVertex(index, newVertexData);
             new_vertices.set(index, newVertex);
         }
         for (const [index, link] of board.graph.links.entries()) {
-            const newLinkData = new BasicLinkData(undefined, link.data.weight, link.data.color);
+            const newLinkData = new ServerLinkData(undefined, link.data.weight, link.data.color, link.data.strokeStyle);
             if (typeof link.data.cp != "undefined" ){
                 newLinkData.cp = link.data.cp.copy();
             }

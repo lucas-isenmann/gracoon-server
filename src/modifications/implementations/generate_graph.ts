@@ -1,18 +1,18 @@
-import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Coord, EmbeddedGraph, generateGraph, Option, ORIENTATION, Vect } from "gramoloss";
+import { BasicLink, BasicVertex, BasicVertexData, Coord, EmbeddedGraph, generateGraph, Option, ORIENTATION, Vect } from "gramoloss";
 import { broadcastInRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
 import { Client } from "../../user";
-import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
+import { BoardModification, SENSIBILITY, ServerBoard, ServerLinkData } from "../modification";
 
 
 
 
 export class GenerateGraph implements BoardModification {
     addedVertices: Array<BasicVertex<BasicVertexData>>;
-    addedLinks: Array<BasicLink<BasicVertexData, BasicLinkData>>;
+    addedLinks: Array<BasicLink<BasicVertexData, ServerLinkData>>;
 
-    constructor(addedVertices: Array<BasicVertex<BasicVertexData>>, addedLinks: Array<BasicLink<BasicVertexData, BasicLinkData>>){
+    constructor(addedVertices: Array<BasicVertex<BasicVertexData>>, addedLinks: Array<BasicLink<BasicVertexData, ServerLinkData>>){
         this.addedVertices = addedVertices;
         this.addedLinks = addedLinks;
     }
@@ -49,7 +49,7 @@ export class GenerateGraph implements BoardModification {
         }
 
         const addedVertices = new Map<number, BasicVertex<BasicVertexData>>();
-        const addedLinks = new Array<BasicLink<BasicVertexData, BasicLinkData>>();
+        const addedLinks = new Array<BasicLink<BasicVertexData, ServerLinkData>>();
         
         const vertex_indices_transformation = new Map<number, number>(); // used to translate the vertices indices in the added links
         const new_vertex_indices: Array<number> = board.graph.get_next_n_available_vertex_indices(g.vertices.size);
@@ -74,7 +74,7 @@ export class GenerateGraph implements BoardModification {
                     console.log(`Error: cannot create GraphPaste: cannot get new startVertex or new endVertex at indices ${startIndex} ${endIndex}`)
                     return;
                 }
-                const linkData = new BasicLinkData(undefined, "", "Neutral");
+                const linkData = new ServerLinkData(undefined, "", "Neutral", "normal");
                 const link = new BasicLink(new_link_indices[j], startVertex, endVertex, newLink.orientation, linkData);
                 addedLinks.push( link);
                 j++;

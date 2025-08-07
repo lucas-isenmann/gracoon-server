@@ -1,17 +1,17 @@
-import { BasicLink, BasicLinkData, BasicVertex, BasicVertexData, Coord, ORIENTATION, Rectangle, Stroke } from "gramoloss";
+import { BasicLink, BasicVertex, BasicVertexData, Coord, ORIENTATION, Rectangle, Stroke } from "gramoloss";
 import { broadcastInRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
 import { Client } from "../../user";
-import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
+import { BoardModification, SENSIBILITY, ServerBoard, ServerLinkData } from "../modification";
 
 export class GraphPaste implements BoardModification {
     addedVertices: Array<BasicVertex<BasicVertexData>>;
-    addedLinks: Array<BasicLink<BasicVertexData, BasicLinkData>>;
+    addedLinks: Array<BasicLink<BasicVertexData, ServerLinkData>>;
 
     addedElements: Array<Stroke | Rectangle>;
 
-    constructor(addedVertices: Array<BasicVertex<BasicVertexData>>, addedLinks: Array<BasicLink<BasicVertexData, BasicLinkData>>, addedElements: Array<Stroke|Rectangle>){
+    constructor(addedVertices: Array<BasicVertex<BasicVertexData>>, addedLinks: Array<BasicLink<BasicVertexData, ServerLinkData>>, addedElements: Array<Stroke|Rectangle>){
         this.addedVertices = addedVertices;
         this.addedLinks = addedLinks;
         this.addedElements = addedElements;
@@ -57,7 +57,7 @@ export class GraphPaste implements BoardModification {
         console.log(`Handle: paste_graph b:${board.roomId} u:${clientId} ${rawElements.length} elements`);
 
         const addedVertices = new Map<number, BasicVertex<BasicVertexData>>();
-        const addedLinks = new Array<BasicLink<BasicVertexData, BasicLinkData>>();
+        const addedLinks = new Array<BasicLink<BasicVertexData, ServerLinkData>>();
         const vertex_indices_transformation = new Map<number, number>(); // used to translate the vertices indices in the added links
 
 
@@ -100,7 +100,7 @@ export class GraphPaste implements BoardModification {
                         console.log(`Error: cannot create GraphPaste: cannot get new startVertex or new endVertex at indices ${startIndex} ${endIndex}`)
                         return;
                     }
-                    const linkData = new BasicLinkData(cp, data.weight, data.color);
+                    const linkData = new ServerLinkData(cp, data.weight, data.color, "normal");
                     const link = new BasicLink(new_link_indices[j], startVertex, endVertex, orient, linkData);
                     addedLinks.push( link);
                     j++;

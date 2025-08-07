@@ -3,7 +3,7 @@ import { broadcastInRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { BoardElement, HistBoard } from "../../hist_board";
 import { Client } from "../../user";
-import { BoardElementKind, BoardModification, kindOfElement, SENSIBILITY, ServerBoard } from "../modification";
+import { BoardElementKind, BoardModification, kindOfElement, SENSIBILITY, ServerBoard, ServerLinkData } from "../modification";
 
 
 
@@ -208,7 +208,7 @@ function elementFromRaw(board: HistBoard, kind: string, data: any): Option<Board
                 }
             }
 
-            const newLinkData = new BasicLinkData(cp, data.weight, data.color);
+            const newLinkData = new ServerLinkData(cp, data.weight, data.color, "normal");
             return new BasicLink(newIndex, startVertex, endVertex, orient, newLinkData );
         } else {
             console.log(`Error: elementFromRaw trying: to create a link between undefined vertex index ${data.start_index} or ${data.end_index}`);

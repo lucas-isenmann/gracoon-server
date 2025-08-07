@@ -65,6 +65,8 @@ export class UpdateElements implements BoardModification {
                         link.data.color = update.new_value;
                     } else if (update.param == "weight"){
                         link.data.weight = update.new_value;
+                    } else if (update.param == "strokeStyle"){
+                        link.data.strokeStyle = update.new_value;
                     } else {
                         console.log(`parameter ${update.param} not implemented`)
                     }
@@ -140,6 +142,8 @@ export class UpdateElements implements BoardModification {
                         link.data.color = update.old_value;
                     } else if (update.param == "weight"){
                         link.data.weight = update.old_value;
+                    } else if (update.param == "strokeStyle"){
+                        link.data.strokeStyle = update.old_value;
                     } else {
                         console.log(`parameter ${update.param} not implemented`)
                     }
@@ -193,7 +197,7 @@ export class UpdateElements implements BoardModification {
     }
 
     static handle(board: HistBoard, client: Client, agregId: string, kind: string, index: number, param: string, new_value: any) {
-        const old_value = board.get_value(kind, index, param);
+        let oldValue = board.get_value(kind, index, param);
 
         if (param == "cp") {
             if (new_value.hasOwnProperty('x') && new_value.hasOwnProperty('y')) {
@@ -202,7 +206,7 @@ export class UpdateElements implements BoardModification {
                 new_value = undefined;
             }
         } else {
-            if (typeof old_value == "undefined"){
+            if (typeof oldValue == "undefined"){
                 const msg = `Error: value of kind:${kind} index:${index} param:${param} is undefined. Request rejected.`;
                 console.log(msg);
                 client.emitError(msg);
@@ -213,7 +217,7 @@ export class UpdateElements implements BoardModification {
         if (board.modifications_stack.length > 0){
             const lastModif = board.modifications_stack[board.modifications_stack.length-1];
             if (lastModif instanceof UpdateElements && lastModif.agregId == agregId){
-                lastModif.agregate(index, kind, param, new_value, old_value);
+                lastModif.agregate(index, kind, param, new_value, oldValue);
                 lastModif.try_implement(board);
                 // console.log(board.modifications_stack);
                 // console.log(board.modifications_stack.length)
@@ -225,7 +229,7 @@ export class UpdateElements implements BoardModification {
         console.log(`Handle: update_element b:${board.roomId} u:${client.label} a:${agregId}`, kind, index, param, new_value);
 
         
-        const modif = new UpdateElements(agregId, index, kind, param, new_value, old_value);
+        const modif = new UpdateElements(agregId, index, kind, param, new_value, oldValue);
         handleBoardModification(board, modif);
         // console.log(board.modifications_stack);
     }

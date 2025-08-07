@@ -9,7 +9,7 @@ import { MergeVertices } from './modifications/implementations/merge_vertices';
 import { ResizeElement } from './modifications/implementations/resize_element';
 import { TranslateElements } from './modifications/implementations/translate_elements';
 import { UpdateElements } from './modifications/implementations/update_element';
-import { SENSIBILITY } from './modifications/modification';
+import { SENSIBILITY, ServerLinkData } from './modifications/modification';
 import { getRandomColor } from './utils';
 import PACKAGE from '../package.json';
 import * as fs from 'fs';
@@ -177,8 +177,9 @@ io.sockets.on('connection', function (socket: Socket) {
                         const weight = rawLink.data.weight;
                         const color = rawLink.data.color;
                         const orientation = rawLink.orientation as ORIENTATION;
+                        const strokeStyle = rawLink.data.hasOwnProperty("strokeStyle") ? rawLink.data.strokeStyle : "normal";
                         const cp = rawLink.data.hasOwnProperty("cp") ? new Coord(rawLink.data.cp.x, rawLink.data.cp.y): undefined;
-                        const data = new BasicLinkData(cp, weight, color);
+                        const data = new ServerLinkData(cp, weight, color, strokeStyle);
                         const link = new BasicLink(index, startVertex, endVertex, orientation, data);
                         newBoard.graph.links.set(index, link);
                     }

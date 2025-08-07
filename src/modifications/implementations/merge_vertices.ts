@@ -3,7 +3,7 @@ import { emitGraphToRoom } from "../..";
 import { handleBoardModification } from "../../handler";
 import { HistBoard } from "../../hist_board";
 import { Client } from "../../user";
-import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
+import { BoardModification, SENSIBILITY, ServerBoard, ServerLinkData } from "../modification";
 
 /**
     deleted_links: links that are deleted during the implementation
@@ -12,10 +12,10 @@ import { BoardModification, SENSIBILITY, ServerBoard } from "../modification";
 export class MergeVertices implements BoardModification {
     vertexFixed: BasicVertex<BasicVertexData>;
     vertex_to_remove: BasicVertex<BasicVertexData>;
-    deleted_links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>;
+    deleted_links: Map<number, BasicLink<BasicVertexData, ServerLinkData>>;
     modified_links_indices: Array<number>;
 
-    constructor(vertexFixed: BasicVertex<BasicVertexData>, vertex_to_remove: BasicVertex<BasicVertexData>, deleted_links: Map<number, BasicLink<BasicVertexData, BasicLinkData>>, modified_links_indices: Array<number>) {
+    constructor(vertexFixed: BasicVertex<BasicVertexData>, vertex_to_remove: BasicVertex<BasicVertexData>, deleted_links: Map<number, BasicLink<BasicVertexData, ServerLinkData>>, modified_links_indices: Array<number>) {
         this.vertexFixed = vertexFixed;
         this.vertex_to_remove = vertex_to_remove;
         this.deleted_links = deleted_links;
